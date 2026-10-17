@@ -36,6 +36,7 @@ beforeAll(async () => {
   `);
   await db.exec(sql('0001_init.sql'));
   await db.exec(sql('0002_seed.sql'));
+  await db.exec(sql('0004_puestos_sueltos.sql'));
   admin = (await one<{ id: string }>("insert into auth.users (email) values ('tio@volterra.test') returning id")).id;
   seller = (await one<{ id: string }>("insert into auth.users (email) values ('vendedor@volterra.test') returning id")).id;
   tableId = (await one<{ id: string }>("select id from tables where code = 'PB-04'")).id; // 10 puestos
@@ -43,11 +44,13 @@ beforeAll(async () => {
 });
 
 describe('datos iniciales', () => {
-  it('carga las 22 mesas del croquis', async () => {
+  it('carga las 22 mesas del croquis y los puestos sueltos', async () => {
     const r = await one<{ pb: number; vip: number }>(
       `select count(*) filter (where code like 'PB-%')::int as pb, count(*) filter (where code like 'VIP-%')::int as vip from tables`,
     );
-    expect(r).toEqual({ pb: 15, vip: 7 });
+    expect(r).toEqual({ pb: 16, vip: 8 });
+    const s = (await db.query("select code, capacity from tables where kind = 'seat' order by code")).rows;
+    expect(s).toEqual([{ code: 'PB-16', capacity: 11 }, { code: 'VIP-08', capacity: 2 }]);
   });
 
   it('el primer usuario es admin y el segundo vendedor', async () => {
