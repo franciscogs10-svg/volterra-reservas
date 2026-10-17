@@ -28,19 +28,28 @@ beforeAll(async () => {
   db = new PGlite({ extensions: { pgcrypto } });
   // Piezas que Supabase ya trae
   await db.exec(`
+    create role anon nologin;
+    create role authenticated nologin;
     create schema auth;
+    grant usage on schema auth to anon, authenticated;
     create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb);
     create function auth.uid() returns uuid language sql stable as $$
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     create publication supabase_realtime;
   `);
-  await db.exec(sql('0001_init.sql'));
-  await db.exec(sql('0002_seed.sql'));
-  await db.exec(sql('0004_puestos_sueltos.sql'));
-  await db.exec(sql('0005_vip_patrocinadores.sql'));
-  await db.exec(sql('0006_sofas_en_el_plano.sql'));
+  for (const f of [
+    '0001_init.sql',
+    '0002_seed.sql',
+    '0003_hardening.sql',
+    '0004_puestos_sueltos.sql',
+    '0005_vip_patrocinadores.sql',
+    '0006_sofas_en_el_plano.sql',
+  ]) {
+    await db.exec(sql(f));
+  }
   admin = (await one<{ id: string }>("insert into auth.users (email) values ('tio@volterra.test') returning id")).id;
   seller = (await one<{ id: string }>("insert into auth.users (email) values ('vendedor@volterra.test') returning id")).id;
+  await db.query('update profiles set active = true where id = $1', [seller]); // el admin lo activa
   tableId = (await one<{ id: string }>("select id from tables where code = 'PB-04'")).id; // 10 puestos
   await as(admin);
 });
