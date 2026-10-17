@@ -38,6 +38,7 @@ beforeAll(async () => {
   await db.exec(sql('0002_seed.sql'));
   await db.exec(sql('0004_puestos_sueltos.sql'));
   await db.exec(sql('0005_vip_patrocinadores.sql'));
+  await db.exec(sql('0006_sofas_en_el_plano.sql'));
   admin = (await one<{ id: string }>("insert into auth.users (email) values ('tio@volterra.test') returning id")).id;
   seller = (await one<{ id: string }>("insert into auth.users (email) values ('vendedor@volterra.test') returning id")).id;
   tableId = (await one<{ id: string }>("select id from tables where code = 'PB-04'")).id; // 10 puestos
