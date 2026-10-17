@@ -2,7 +2,7 @@
 
 **Actualizado:** 2026-10-17 (tarde)
 **Fase:** en producción (https://volterra-reservas.vercel.app, HTTP 200 verificado 2026-10-17 19:15), desplegada desde la PC antes de blindar. En GitHub, `main` sigue en el commit inicial; el código vive en la rama `feat/app-base`.
-**Cliente:** Corporación Montiel. Admin: Alejandro, tío de Francisco (corporacionmontiel@gmail.com). El evento es **MOREFEST**, festival de Morella Montiel (cantante, esposa de Alejandro) en el restaurante VOLTERRA, Maracaibo, programa "Renacer": 15 artistas invitados y patrocinadores. La app pasa a llamarse MOREFEST; Volterra es el lugar. Página canónica: `C:\Dev\fbrain\projects\volterra-reservas.md`. Handoff de la sesión del 17: `C:\Dev\fbrain\meta\coordinacion\handoff-pc-to-pc-morefest-2026-10-17.md`.
+**Cliente:** Corporación Montiel. Admin: Alejandro Hernández, tío de Valentina Hernández (esposa de Francisco) (corporacionmontiel@gmail.com). El evento es **MOREFEST**, festival de Morella Montiel (cantante, esposa de Alejandro) en el restaurante VOLTERRA, Maracaibo, programa "Renacer": 15 artistas invitados y patrocinadores. La app pasa a llamarse MOREFEST; Volterra es el lugar. Página canónica: `C:\Dev\fbrain\projects\volterra-reservas.md`. Handoff de la sesión del 17: `C:\Dev\fbrain\meta\coordinacion\handoff-pc-to-pc-morefest-2026-10-17.md`.
 
 ## Qué es
 
