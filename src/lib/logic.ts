@@ -64,7 +64,9 @@ export function summarize(tables: TableRow[], all: Reservation[]) {
   };
 }
 
-const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+/** Excel ejecuta como fórmula lo que empieza con = + - @; un teléfono (+58 412...) no se toca. */
+const neutralize = (s: string) => (/^[=+\-@\t\r]/.test(s) && !/^[+-][\d\s().-]*$/.test(s) ? `'${s}` : s);
+const csvCell = (v: string | number) => `"${neutralize(String(v)).replace(/"/g, '""')}"`;
 
 export function toCsv(tables: TableRow[], all: Reservation[]) {
   const code = new Map(tables.map((t) => [t.id, t.code]));

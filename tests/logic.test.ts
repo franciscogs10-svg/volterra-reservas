@@ -65,6 +65,17 @@ describe('resumen y CSV', () => {
     expect(csv.split('\n')[1]).toContain('"Ana ""la jefa"""');
     expect(csv.split('\n')[0]).toBe('"mesa","reserva","cliente","whatsapp","puestos","total","pagado","saldo","estado"');
   });
+  it('un nombre con fórmula no se ejecuta al abrir el CSV en Excel', () => {
+    const row = (name: string) => toCsv(tables, [res({ name })]).split('\n')[1];
+    expect(row('=HYPERLINK("http://x","clic")')).toContain(`"'=HYPERLINK(""http://x"",""clic"")"`);
+    expect(row('@SUM(A1)')).toContain(`"'@SUM(A1)"`);
+    expect(row('-2+3')).toContain(`"'-2+3"`);
+    expect(row('+cmd|x')).toContain(`"'+cmd|x"`);
+  });
+  it('los teléfonos con + quedan intactos en el CSV', () => {
+    const row = toCsv(tables, [res({ phone: '+58 412-555 1234' })]).split('\n')[1];
+    expect(row).toContain('"+58 412-555 1234"');
+  });
 });
 
 describe('errores', () => {
