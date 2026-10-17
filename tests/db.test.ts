@@ -16,6 +16,22 @@ async function as(user: string) {
 async function one<T = any>(q: string, p: unknown[] = []): Promise<T> {
   return (await db.query(q, p)).rows[0] as T;
 }
+/** Ejecuta una consulta como la ve la API de Supabase: rol anon o authenticated, con RLS. */
+async function viaApi<T = any>(role: 'anon' | 'authenticated', user: string | null, q: string): Promise<T[]> {
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [user ?? '']);
+  await db.exec(`set role ${role}`);
+  try {
+    return (await db.query(q)).rows as T[];
+  } finally {
+    await db.exec('reset role');
+    await as(admin);
+  }
+}
+async function reserveAt(code: string, seats: number, total: number, deposit: number) {
+  const t = (await one<{ id: string }>('select id from tables where code = $1', [code])).id;
+  return (await one<{ id: string }>(
+    'select create_reservation($1,$2,$3,$4,$5,$6,$7,$8) as id', [t, 'Cliente', null, seats, total, deposit, 'Efectivo', null])).id;
+}
 async function reserve(seats: number, total = 100, deposit = 0) {
   const r = await one<{ id: string }>(
     'select create_reservation($1, $2, $3, $4, $5, $6, $7, $8) as id',
@@ -44,6 +60,7 @@ beforeAll(async () => {
     '0004_puestos_sueltos.sql',
     '0005_vip_patrocinadores.sql',
     '0006_sofas_en_el_plano.sql',
+    '0007_blindaje.sql',
   ]) {
     await db.exec(sql(f));
   }
@@ -135,6 +152,34 @@ describe('pagos', () => {
     const sum = await one<{ s: string }>('select sum(amount) as s from payments where reservation_id = $1', [p.reservation_id]);
     expect(Number(sum.s)).toBeLessThan(120);
   });
+
+  it('un pago se revierte una sola vez', async () => {
+    const res = await reserveAt('PB-07', 2, 80, 80);
+    const p = (await one<{ id: string }>("select id from payments where reservation_id = $1 and kind = 'payment'", [res])).id;
+    await db.query('select reverse_payment($1, $2)', [p, 'devolución']);
+    await expect(db.query('select reverse_payment($1, $2)', [p, 'otra vez'])).rejects.toThrow(/ya revertido/);
+    const sum = await one<{ s: string }>('select sum(amount) as s from payments where reservation_id = $1', [res]);
+    expect(Number(sum.s)).toBe(0);
+  });
+
+  it('ni por fuera de la función caben dos reversos del mismo pago', async () => {
+    const res = await reserveAt('PB-08', 2, 50, 50);
+    const p = (await one<{ id: string }>("select id from payments where reservation_id = $1 and kind = 'payment'", [res])).id;
+    await db.query('select reverse_payment($1, $2)', [p, 'devolución']);
+    await expect(
+      db.query(
+        `insert into payments (reservation_id, kind, amount, method, reason, created_by, reverses_payment_id)
+         values ($1, 'reversal', -50, 'Efectivo', 'carrera', $2, $3)`,
+        [res, admin, p],
+      ),
+    ).rejects.toThrow(/duplicate|unique/);
+  });
+
+  it('el reverso exige un motivo escrito', async () => {
+    const res = await reserveAt('PB-10', 2, 40, 40);
+    const p = (await one<{ id: string }>("select id from payments where reservation_id = $1 and kind = 'payment'", [res])).id;
+    await expect(db.query('select reverse_payment($1, $2)', [p, '   '])).rejects.toThrow(/motivo/);
+  });
 });
 
 describe('ingreso', () => {
@@ -152,6 +197,14 @@ describe('ingreso', () => {
     await as(admin);
     await expect(db.query('select check_in($1, 5)', [res2])).resolves.toBeDefined(); // admin puede forzar
   });
+
+  it('no deja entrar una reserva apartada que no está confirmada', async () => {
+    const res = await reserveAt('PB-11', 2, 60, 0);
+    // Así nacerán las reservas del link público mientras el pago no se confirme.
+    await db.query("update reservations set status = 'held' where id = $1", [res]);
+    await expect(db.query('select check_in($1, 2)', [res])).rejects.toThrow(/no confirmada/);
+    expect((await db.query('select 1 from check_ins where reservation_id = $1', [res])).rows).toHaveLength(0);
+  });
 });
 
 describe('permisos y auditoría', () => {
@@ -160,6 +213,27 @@ describe('permisos y auditoría', () => {
     await as(seller);
     await expect(db.query('select cancel_reservation($1, $2)', [id, 'x'])).rejects.toThrow(/forbidden/);
     await as(admin);
+  });
+
+  it('sin sesión la API no lee ninguna tabla', async () => {
+    await expect(viaApi('anon', null, 'select * from customers')).rejects.toThrow(/permission denied/);
+    await expect(viaApi('anon', null, 'select * from reservation_summary')).rejects.toThrow(/permission denied/);
+  });
+
+  it('quien se registra por su cuenta queda sin acceso hasta que el admin lo active', async () => {
+    const stranger = (await one<{ id: string }>("insert into auth.users (email) values ('extrano@internet.test') returning id")).id;
+    const p = await one<{ role: string; active: boolean }>('select role, active from profiles where id = $1', [stranger]);
+    expect(p.active).toBe(false);
+    expect(await viaApi('authenticated', stranger, 'select id from customers')).toHaveLength(0);
+    expect(await viaApi('authenticated', stranger, 'select id from reservations')).toHaveLength(0);
+    expect(await viaApi('authenticated', stranger, 'select id from payments')).toHaveLength(0);
+    await as(stranger);
+    await expect(reserve(1)).rejects.toThrow(/forbidden/);
+    await as(admin);
+  });
+
+  it('un vendedor activo sí ve las reservas por la API', async () => {
+    expect((await viaApi('authenticated', seller, 'select id from reservations')).length).toBeGreaterThan(0);
   });
 
   it('un usuario sin perfil no puede reservar', async () => {
