@@ -1,6 +1,6 @@
 # volterra-reservas — Contexto para Claude
 
-Reservas de mesas y control de acceso para el evento VOLTERRA. Un solo operador desde el celular o el computador. Next.js 16 + Supabase (Postgres, Auth, Realtime) + Vercel. Detalle funcional en `README.md`; estado vivo en `STATE.md`; decisiones en `docs/DECISIONES.md`.
+Reservas de mesas y control de acceso para el evento VOLTERRA (cliente: Corporación Montiel; admin: Alejandro). En producción en https://volterra-reservas.vercel.app. Next.js 16 + Supabase (Postgres, Auth, Realtime) + Vercel. Detalle funcional en `README.md`; estado vivo en `STATE.md`; decisiones en `docs/DECISIONES.md`.
 
 ## Este repo opera bajo el imperio fbrain
 

@@ -2,6 +2,15 @@
 
 Una entrada por decisión, la más nueva arriba. Fecha absoluta, qué se decidió y por qué. Lo que afecte al imperio se copia a `C:\Dev\fbrain\projects\volterra-reservas.md`.
 
+## 2026-10-17 — Link público de reservas: propuesto, espera tres decisiones
+
+- Los clientes eligen mesa o puestos, dejan nombre y teléfono, reciben un código y pagan manual; el panel de Alejandro se llena solo. Tiene que verse profesional: es demo de capacidad para IS.
+- Pendiente de Francisco: plazo de apartado (propuesto 24 h), sofás de patrocinadores fuera del link (propuesto sí) y cuenta Resend para los avisos por correo. No se construye antes de blindar lo que ya está en producción.
+
+## 2026-10-17 — Producción antes de blindar
+
+- La app se desplegó en Vercel desde la PC antes de correr `blindar`. Se acepta como hecho; el blindaje se corre sobre lo que ya está publicado antes de abrir el link público.
+
 ## 2026-10-17 — Metodología del imperio aplicada al repo
 
 - CLAUDE.md (sección propia más el template de imperio-bootstrap), STATE.md y este registro. Flujo diseñar, blindar, publicar obligatorio; el primer push a `main` solo después de `blindar`.
