@@ -1,0 +1,151 @@
+import { readFileSync } from 'node:fs';
+import { PGlite } from '@electric-sql/pglite';
+import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
+import { beforeAll, describe, expect, it } from 'vitest';
+
+const sql = (f: string) => readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), 'utf8');
+
+let db: PGlite;
+let admin: string;
+let seller: string;
+let tableId: string;
+
+async function as(user: string) {
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [user]);
+}
+async function one<T = any>(q: string, p: unknown[] = []): Promise<T> {
+  return (await db.query(q, p)).rows[0] as T;
+}
+async function reserve(seats: number, total = 100, deposit = 0) {
+  const r = await one<{ id: string }>(
+    'select create_reservation($1, $2, $3, $4, $5, $6, $7, $8) as id',
+    [tableId, 'Cliente', '+58 412 000', seats, total, deposit, 'Efectivo', null],
+  );
+  return r.id;
+}
+
+beforeAll(async () => {
+  db = new PGlite({ extensions: { pgcrypto } });
+  // Piezas que Supabase ya trae
+  await db.exec(`
+    create schema auth;
+    create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb);
+    create function auth.uid() returns uuid language sql stable as $$
+      select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+    create publication supabase_realtime;
+  `);
+  await db.exec(sql('0001_init.sql'));
+  await db.exec(sql('0002_seed.sql'));
+  admin = (await one<{ id: string }>("insert into auth.users (email) values ('tio@volterra.test') returning id")).id;
+  seller = (await one<{ id: string }>("insert into auth.users (email) values ('vendedor@volterra.test') returning id")).id;
+  tableId = (await one<{ id: string }>("select id from tables where code = 'PB-04'")).id; // 10 puestos
+  await as(admin);
+});
+
+describe('datos iniciales', () => {
+  it('carga las 22 mesas del croquis', async () => {
+    const r = await one<{ pb: number; vip: number }>(
+      `select count(*) filter (where code like 'PB-%')::int as pb, count(*) filter (where code like 'VIP-%')::int as vip from tables`,
+    );
+    expect(r).toEqual({ pb: 15, vip: 7 });
+  });
+
+  it('el primer usuario es admin y el segundo vendedor', async () => {
+    const rows = (await db.query('select id, role from profiles')).rows as { id: string; role: string }[];
+    expect(rows.find((r) => r.id === admin)?.role).toBe('admin');
+    expect(rows.find((r) => r.id === seller)?.role).toBe('seller');
+  });
+});
+
+describe('reserva por puestos', () => {
+  it('no deja pasar de la capacidad de la mesa', async () => {
+    await reserve(4);
+    await expect(reserve(7)).rejects.toThrow(/sin puestos/);
+    await reserve(6);
+    await expect(reserve(1)).rejects.toThrow(/sin puestos/);
+  });
+
+  it('un grupo mayor a la capacidad se rechaza', async () => {
+    const other = (await one<{ id: string }>("select id from tables where code = 'PB-02'")).id; // 4 puestos
+    await expect(
+      one('select create_reservation($1,$2,$3,$4,$5,$6,$7,$8)', [other, 'X', null, 5, 10, 0, 'Efectivo', null]),
+    ).rejects.toThrow(/excede capacidad/);
+  });
+
+  it('cancelar libera los puestos', async () => {
+    const id = (await one<{ id: string }>(
+      "select id from reservations where table_id = $1 and guests = 6", [tableId])).id;
+    await db.query('select cancel_reservation($1, $2)', [id, 'prueba']);
+    await reserve(6);
+  });
+
+  it('el anticipo no puede superar el total', async () => {
+    const other = (await one<{ id: string }>("select id from tables where code = 'PB-09'")).id;
+    await expect(
+      one('select create_reservation($1,$2,$3,$4,$5,$6,$7,$8)', [other, 'X', null, 2, 50, 80, 'Efectivo', null]),
+    ).rejects.toThrow(/anticipo/);
+  });
+});
+
+describe('pagos', () => {
+  it('guarda cada abono como movimiento y calcula el saldo', async () => {
+    const t = (await one<{ id: string }>("select id from tables where code = 'PB-03'")).id;
+    const res = (await one<{ id: string }>(
+      'select create_reservation($1,$2,$3,$4,$5,$6,$7,$8) as id', [t, 'Marcela', null, 4, 120, 50, 'Pago móvil', null])).id;
+    await db.query('select add_payment($1, 70, $2, null)', [res, 'Efectivo']);
+    const s = await one<{ paid: string; balance: string; pay_status: string }>(
+      'select paid, balance, pay_status from reservation_summary where id = $1', [res]);
+    expect(Number(s.paid)).toBe(120);
+    expect(Number(s.balance)).toBe(0);
+    expect(s.pay_status).toBe('paid');
+    expect((await db.query('select 1 from payments where reservation_id = $1', [res])).rows).toHaveLength(2);
+  });
+
+  it('un pago no se edita ni se borra, se revierte', async () => {
+    const p = await one<{ id: string; reservation_id: string }>('select id, reservation_id from payments limit 1');
+    await expect(db.query('update payments set amount = 1 where id = $1', [p.id])).rejects.toThrow(/no se editan/);
+    await expect(db.query('delete from payments where id = $1', [p.id])).rejects.toThrow(/no se editan/);
+    await db.query('select reverse_payment($1, $2)', [p.id, 'error de captura']);
+    const sum = await one<{ s: string }>('select sum(amount) as s from payments where reservation_id = $1', [p.reservation_id]);
+    expect(Number(sum.s)).toBeLessThan(120);
+  });
+});
+
+describe('ingreso', () => {
+  it('confirma llegada una sola vez y no pasa de los puestos', async () => {
+    const t = (await one<{ id: string }>("select id from tables where code = 'PB-05'")).id;
+    const res = (await one<{ id: string }>(
+      'select create_reservation($1,$2,$3,$4,$5,$6,$7,$8) as id', [t, 'Luis', null, 3, 90, 0, 'Efectivo', null])).id;
+    await db.query('select check_in($1, 3)', [res]);
+    await expect(db.query('select check_in($1, 3)', [res])).rejects.toThrow();
+    const t2 = (await one<{ id: string }>("select id from tables where code = 'PB-06'")).id;
+    const res2 = (await one<{ id: string }>(
+      'select create_reservation($1,$2,$3,$4,$5,$6,$7,$8) as id', [t2, 'Ana', null, 2, 60, 0, 'Efectivo', null])).id;
+    await as(seller);
+    await expect(db.query('select check_in($1, 2)', [res2])).rejects.toThrow(/forbidden/);
+    await as(admin);
+    await expect(db.query('select check_in($1, 5)', [res2])).resolves.toBeDefined(); // admin puede forzar
+  });
+});
+
+describe('permisos y auditoría', () => {
+  it('el vendedor no cancela ni revierte pagos', async () => {
+    const id = (await one<{ id: string }>('select id from reservations limit 1')).id;
+    await as(seller);
+    await expect(db.query('select cancel_reservation($1, $2)', [id, 'x'])).rejects.toThrow(/forbidden/);
+    await as(admin);
+  });
+
+  it('un usuario sin perfil no puede reservar', async () => {
+    await as('00000000-0000-0000-0000-000000000000');
+    await expect(reserve(1)).rejects.toThrow(/forbidden/);
+    await as(admin);
+  });
+
+  it('deja registro de los cambios', async () => {
+    const r = await one<{ n: number }>("select count(*)::int as n from audit_logs where table_name = 'reservations'");
+    expect(r.n).toBeGreaterThan(3);
+    const p = await one<{ n: number }>("select count(*)::int as n from audit_logs where table_name = 'payments'");
+    expect(p.n).toBeGreaterThan(0);
+  });
+});
