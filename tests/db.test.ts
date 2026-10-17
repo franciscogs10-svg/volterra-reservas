@@ -37,6 +37,7 @@ beforeAll(async () => {
   await db.exec(sql('0001_init.sql'));
   await db.exec(sql('0002_seed.sql'));
   await db.exec(sql('0004_puestos_sueltos.sql'));
+  await db.exec(sql('0005_vip_patrocinadores.sql'));
   admin = (await one<{ id: string }>("insert into auth.users (email) values ('tio@volterra.test') returning id")).id;
   seller = (await one<{ id: string }>("insert into auth.users (email) values ('vendedor@volterra.test') returning id")).id;
   tableId = (await one<{ id: string }>("select id from tables where code = 'PB-04'")).id; // 10 puestos
@@ -46,11 +47,16 @@ beforeAll(async () => {
 describe('datos iniciales', () => {
   it('carga las 22 mesas del croquis y los puestos sueltos', async () => {
     const r = await one<{ pb: number; vip: number }>(
-      `select count(*) filter (where code like 'PB-%')::int as pb, count(*) filter (where code like 'VIP-%')::int as vip from tables`,
+      `select count(*) filter (where code like 'PB-%')::int as pb, count(*) filter (where code like 'VIP-%')::int as vip from tables where active`,
     );
-    expect(r).toEqual({ pb: 16, vip: 8 });
-    const s = (await db.query("select code, capacity from tables where kind = 'seat' order by code")).rows;
-    expect(s).toEqual([{ code: 'PB-16', capacity: 11 }, { code: 'VIP-08', capacity: 2 }]);
+    expect(r).toEqual({ pb: 16, vip: 3 });
+    const s = (await db.query("select code, kind, capacity from tables where active and kind <> 'table' order by code")).rows;
+    expect(s).toEqual([
+      { code: 'PB-16', kind: 'seat', capacity: 11 },
+      { code: 'VIP-05', kind: 'sofa', capacity: 4 },
+      { code: 'VIP-06', kind: 'sofa', capacity: 4 },
+      { code: 'VIP-07', kind: 'sofa', capacity: 4 },
+    ]);
   });
 
   it('el primer usuario es admin y el segundo vendedor', async () => {
@@ -73,6 +79,13 @@ describe('reserva por puestos', () => {
     await expect(
       one('select create_reservation($1,$2,$3,$4,$5,$6,$7,$8)', [other, 'X', null, 5, 10, 0, 'Efectivo', null]),
     ).rejects.toThrow(/excede capacidad/);
+  });
+
+  it('una mesa retirada no se reserva', async () => {
+    const retired = (await one<{ id: string }>("select id from tables where code = 'VIP-01'")).id;
+    await expect(
+      one('select create_reservation($1,$2,$3,$4,$5,$6,$7,$8)', [retired, 'X', null, 1, 10, 0, 'Efectivo', null]),
+    ).rejects.toThrow(/retirada/);
   });
 
   it('cancelar libera los puestos', async () => {

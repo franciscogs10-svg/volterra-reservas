@@ -22,6 +22,7 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
       .from('tables')
       .select('id,code,capacity,price,seat_price,map_x,map_y,map_w,map_h,map_rot,shape,areas(code)')
       .eq('event_id', event.id)
+      .eq('active', true)
       .order('code'),
     sb
       .from('reservations')
