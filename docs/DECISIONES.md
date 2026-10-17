@@ -2,6 +2,17 @@
 
 Una entrada por decisión, la más nueva arriba. Fecha absoluta, qué se decidió y por qué. Lo que afecte al imperio se copia a `C:\Dev\fbrain\projects\volterra-reservas.md`.
 
+## 2026-10-17 (tarde) — MOREFEST: nombre real, link público como venta de tickets, Resend
+
+- La app es **MOREFEST**, el festival de Morella Montiel (cantante) en el restaurante VOLTERRA, Maracaibo, programa "Renacer" (15 artistas invitados, patrocinadores). Admin: Alejandro, tío de Francisco y esposo de Morella. Volterra es el lugar, no el producto. Falta rebautizar título, metadatos y `events.name`, y decidir la URL.
+- El link público es **compra de ticket con pago inmediato**: nada queda apartado desde el público; solo Alejandro aparta, reserva y asigna. Sustituye la propuesta de apartado de 24 h. Los sofás de patrocinadores (VIP-05/06/07) quedan fuera del link y se venden a mano.
+- Resend para avisos por correo: cuenta creada por Francisco, `RESEND_API_KEY` en Vercel (producción y desarrollo). La key pasó por el chat: rotarla cuando se pueda.
+- Pendientes de decisión antes de construir: medio de pago inmediato (pasarela o Pago Móvil/Zelle/Binance con comprobante) y entrega del ticket (QR por WhatsApp o correo con dominio verificado).
+
+## 2026-10-17 — Plano VIP se edita por código, no se redibuja con IA
+
+- Francisco pidió modificar `public/plano-vip.jpg` (quitar las mesas de la zona de artistas, dibujar tres sofás y mesitas altas y bajas) y ofreció hacerlo con ChatGPT. Se edita con PIL sobre la imagen original para conservar el lienzo 792x966 y las coordenadas del mapa; una imagen regenerada cambiaría proporciones y encuadre. Pendiente de hacer.
+
 ## 2026-10-17 — Link público de reservas: propuesto, espera tres decisiones
 
 - Los clientes eligen mesa o puestos, dejan nombre y teléfono, reciben un código y pagan manual; el panel de Alejandro se llena solo. Tiene que verse profesional: es demo de capacidad para IS.
