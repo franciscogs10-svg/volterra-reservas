@@ -39,6 +39,7 @@ beforeAll(async () => {
   await db.exec(sql('0004_puestos_sueltos.sql'));
   await db.exec(sql('0005_vip_patrocinadores.sql'));
   await db.exec(sql('0006_sofas_en_el_plano.sql'));
+  await db.exec(sql('0007_sofas_mirando_pantalla.sql'));
   admin = (await one<{ id: string }>("insert into auth.users (email) values ('tio@volterra.test') returning id")).id;
   seller = (await one<{ id: string }>("insert into auth.users (email) values ('vendedor@volterra.test') returning id")).id;
   tableId = (await one<{ id: string }>("select id from tables where code = 'PB-04'")).id; // 10 puestos
@@ -57,6 +58,15 @@ describe('datos iniciales', () => {
       { code: 'VIP-05', kind: 'sofa', capacity: 4 },
       { code: 'VIP-06', kind: 'sofa', capacity: 4 },
       { code: 'VIP-07', kind: 'sofa', capacity: 4 },
+    ]);
+  });
+
+  it('los sofás VIP van paralelos a la baranda, mirando a la pantalla LED, sin mover su centro', async () => {
+    const s = (await db.query("select code, map_x::int as x, map_y::int as y, map_w::int as w, map_h::int as h, map_rot::int as rot from tables where kind = 'sofa' order by code")).rows;
+    expect(s).toEqual([
+      { code: 'VIP-05', x: 280, y: 445, w: 96, h: 40, rot: 48 },
+      { code: 'VIP-06', x: 352, y: 520, w: 96, h: 40, rot: 48 },
+      { code: 'VIP-07', x: 420, y: 598, w: 96, h: 40, rot: 48 },
     ]);
   });
 
