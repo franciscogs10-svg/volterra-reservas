@@ -2,6 +2,14 @@
 
 Una entrada por decisión, la más nueva arriba. Fecha absoluta, qué se decidió y por qué. Lo que afecte al imperio se copia a `C:\Dev\fbrain\projects\volterra-reservas.md`.
 
+## 2026-10-17 (noche) — Blindaje de lo que está en producción (rama fix/blindaje, migración 0008)
+
+- **Registro abierto = vendedor gratis.** Supabase Auth tenía el registro público abierto (`disable_signup=false`) y `handle_new_user` le daba a todo usuario nuevo un perfil `seller` activo: con eso se leen clientes, teléfonos y pagos, y se registran abonos. Se cierra en dos capas: Francisco apaga el registro en el panel y la 0008 hace que todo usuario después del primero nazca inactivo hasta que el admin lo active (README, "Usuarios del equipo"). Razón: no depender de un interruptor del panel para la seguridad de los datos.
+- **La puerta solo deja entrar reservas confirmadas.** `check_in` rechaza `held`. Hoy nadie crea reservas `held`, pero el link público las usará mientras el pago no se confirme.
+- **Un pago se revierte una sola vez y con motivo.** Columna `payments.reverses_payment_id` única: el reverso apunta a su pago y dos reversos simultáneos no restan doble. Necesario antes de manejar reembolsos del link público.
+- **Cabeceras de seguridad** en `next.config.ts` (CSP que solo habla con el Supabase del proyecto y Google Fonts, sin iframes) y **CSV sin fórmulas** (un nombre como `=HYPERLINK(...)` ya no se ejecuta en Excel).
+- La migración es la 0008 porque la 0007 la tomó la rama `fix/plano-vip-sofas`.
+
 ## 2026-10-17 (tarde) — MOREFEST: nombre real, link público como venta de tickets, Resend
 
 - La app es **MOREFEST**, el festival de Morella Montiel (cantante) en el restaurante VOLTERRA, Maracaibo, programa "Renacer" (15 artistas invitados, patrocinadores). Admin: Alejandro Hernández, tío de Valentina Hernández (esposa de Francisco) y esposo de Morella. Volterra es el lugar, no el producto. Falta rebautizar título, metadatos y `events.name`, y decidir la URL.

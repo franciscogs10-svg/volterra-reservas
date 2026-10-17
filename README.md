@@ -15,9 +15,22 @@ Next.js + Supabase (Postgres, Auth, Realtime) + Vercel.
 ## Puesta en marcha
 
 1. Crea un proyecto en [Supabase](https://supabase.com).
-2. En **SQL Editor** ejecuta, en orden, `supabase/migrations/0001_init.sql` y `supabase/migrations/0002_seed.sql`.
-3. En **Authentication > Providers > Email** desactiva el registro público (*Allow new users to sign up*).
-4. En **Authentication > Users** crea el usuario con correo y contraseña (*Add user*, con *Auto Confirm*). El primer usuario queda como `admin`.
+2. En **SQL Editor** ejecuta, en orden, todas las migraciones de `supabase/migrations/` (de la `0001` a la última).
+3. En **Authentication > Sign In / Providers** desactiva el registro público (*Allow new users to sign up*).
+4. En **Authentication > Users** crea el usuario con correo y contraseña (*Add user*, con *Auto Confirm*). El primer usuario queda como `admin` y activo.
+
+## Usuarios del equipo
+
+Desde la migración `0008`, todo usuario que no sea el primero nace **inactivo**: no ve datos ni puede hacer nada hasta que el admin lo active. Así, aunque el registro público quede abierto por error, un desconocido no entra.
+
+Para sumar a alguien: créalo en **Authentication > Users** (*Add user*, con *Auto Confirm*) y actívalo en el **SQL Editor**:
+
+```sql
+update profiles set active = true, role = 'seller'   -- 'door' para la puerta, 'admin' para otro administrador
+where id = (select id from auth.users where email = 'correo@ejemplo.com');
+```
+
+Para quitarle el acceso: el mismo `update` con `active = false`.
 5. Copia `.env.example` a `.env.local` y pega la URL del proyecto y la clave `anon` (**Project Settings > API**). Nunca uses la `service_role` en la app.
 6. `npm install` y `npm run dev`.
 
@@ -28,8 +41,9 @@ Importa el repo en Vercel, agrega las dos variables `NEXT_PUBLIC_SUPABASE_URL` y
 ## Reglas que garantiza la base de datos
 
 - La suma de puestos de las reservas activas de una mesa no puede superar su capacidad (trigger con bloqueo de la fila de la mesa, para que dos reservas a la vez no se pasen).
-- Los pagos no se editan ni se borran. `reverse_payment` agrega un movimiento negativo con motivo.
-- Todas las acciones pasan por funciones que exigen sesión y rol (`require_role`). Sin sesión, `forbidden`.
+- Los pagos no se editan ni se borran. `reverse_payment` agrega un movimiento negativo con motivo escrito, que apunta al pago que revierte; un pago se revierte una sola vez.
+- Solo entra (`check_in`) una reserva confirmada: una apartada sin pagar o cancelada no pasa la puerta.
+- Todas las acciones pasan por funciones que exigen sesión, perfil activo y rol (`require_role`). Sin eso, `forbidden`, y las políticas RLS no devuelven filas.
 - Cada cambio en reservas, pagos, mesas e ingresos queda en `audit_logs`.
 
 ## Pruebas
