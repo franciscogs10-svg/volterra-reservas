@@ -60,7 +60,8 @@ beforeAll(async () => {
     '0004_puestos_sueltos.sql',
     '0005_vip_patrocinadores.sql',
     '0006_sofas_en_el_plano.sql',
-    '0007_blindaje.sql',
+    // 0007 es de la rama fix/plano-vip-sofas (0007_sofas_mirando_pantalla.sql); al fusionar va antes de esta.
+    '0008_blindaje.sql',
   ]) {
     await db.exec(sql(f));
   }
