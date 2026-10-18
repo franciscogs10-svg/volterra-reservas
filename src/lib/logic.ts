@@ -1,4 +1,4 @@
-import type { AreaCode, EventRow, Reservation, ResStatus, TableRow, TableStatus } from './types';
+import type { AreaCode, EventRow, ProtocolRow, Reservation, ResStatus, TableRow, TableStatus } from './types';
 
 export const LABEL: Record<TableStatus, string> = {
   free: 'Disponible',
@@ -163,4 +163,50 @@ export function confirmationMessage(r: Reservation, table: TableRow, ev: EventRo
     'Corporación Montiel',
   ].join('\n');
   return { subject: `MOREFEST · Confirmación de tu reserva (Mesa ${table.code})`, body };
+}
+
+/** Enlace mailto con asunto y cuerpo codificados, o null si pasa de 1.800 caracteres: algunos clientes
+ *  de correo cortan los enlaces largos, y entonces la interfaz avisa y deja "Copiar mensaje".
+ *  El correo debe llegar ya validado con isValidEmail. */
+export function mailtoHref(email: string, msg: { subject: string; body: string }): string | null {
+  const to = encodeURIComponent(email.trim()).replace(/%40/g, '@');
+  const href = `mailto:${to}?subject=${encodeURIComponent(msg.subject)}&body=${encodeURIComponent(msg.body)}`;
+  return href.length > 1800 ? null : href;
+}
+
+const AREA_ORDER: Record<AreaCode, number> = { PB: 0, VIP: 1 };
+const TABLE_CODE = new Intl.Collator('es', { numeric: true }); // PB-2 antes que PB-10
+const byName = (a: ProtocolRow, b: ProtocolRow) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+const byTable = (a: ProtocolRow, b: ProtocolRow) => TABLE_CODE.compare(a.tableCode, b.tableCode);
+
+/** Lista de la puerta: una fila por reserva activa (las canceladas no llegan al snapshot), planta baja
+ *  antes que VIP, por mesa o por nombre. Una reserva de una mesa fuera del mapa (retirada) no sale.
+ *  Sin permiso de pagos (rol puerta) el saldo va en null: la base no le muestra los abonos. */
+export function protocolRows(
+  tables: TableRow[], reservations: Reservation[], order: 'mesa' | 'nombre', canSeePayments: boolean,
+): ProtocolRow[] {
+  const byId = new Map(tables.map((t) => [t.id, t]));
+  const rows = reservations.flatMap((r): ProtocolRow[] => {
+    const t = byId.get(r.table_id);
+    if (!t) return [];
+    return [{
+      reservationId: r.id, tableId: t.id, tableCode: t.code, area: t.area, name: r.name, guests: r.guests,
+      code: r.code, balance: canSeePayments ? balance(r) : null, checkedIn: r.checked_in,
+      checkedInAt: r.checked_in_at, notes: r.notes,
+    }];
+  });
+  return rows.sort(
+    (a, b) =>
+      AREA_ORDER[a.area] - AREA_ORDER[b.area] ||
+      (order === 'mesa' ? byTable(a, b) || byName(a, b) : byName(a, b) || byTable(a, b)) ||
+      a.code.localeCompare(b.code),
+  );
+}
+
+export function protocolTotals(rows: ProtocolRow[]): { reservations: number; expected: number; inside: number } {
+  return {
+    reservations: rows.length,
+    expected: rows.reduce((s, r) => s + r.guests, 0),
+    inside: rows.reduce((s, r) => s + (r.checkedIn ?? 0), 0),
+  };
 }

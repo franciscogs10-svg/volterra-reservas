@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  balance, confirmationMessage, eventDateLabel, formatMoney, friendlyError, isValidEmail, money, resStatus, seatPrice,
-  summarize, tableStatus, toCsv,
+  balance, confirmationMessage, eventDateLabel, formatMoney, friendlyError, isValidEmail, mailtoHref, money,
+  protocolRows, protocolTotals, resStatus, seatPrice, summarize, tableStatus, toCsv,
 } from '../src/lib/logic';
 import type { EventRow, Payment, Reservation, TableRow } from '../src/lib/types';
 
@@ -179,5 +179,79 @@ describe('mensaje de confirmación', () => {
     const { body } = confirmationMessage(res({ guests: 1 }), table({ code: 'VIP-05', area: 'VIP' }), ev({ event_date: null, venue: null }));
     expect(body).toContain('Mesa VIP-05, planta alta VIP\n1 persona\nFecha por anunciar\nCódigo de reserva: AB12CD\n');
     expect(body).toContain('Abonos:\n- Sin abonos todavía\nPagado: $0,00\nSaldo pendiente: $100,00\n');
+  });
+});
+
+describe('enlace de correo', () => {
+  const m = confirmationMessage(res({ name: 'José Ángel Añez', payments: [pay(40)] }), table({ code: 'PB-07' }), ev());
+
+  it('codifica asunto y cuerpo, y al decodificar vuelven intactos', () => {
+    const href = mailtoHref('mafer.urdaneta@ejemplo.com', m);
+    expect(href?.startsWith('mailto:mafer.urdaneta@ejemplo.com?subject=')).toBe(true);
+    expect(href).not.toMatch(/\s/);
+    const q = new URLSearchParams(href!.split('?')[1]);
+    expect(q.get('subject')).toBe(m.subject);
+    expect(q.get('body')).toBe(m.body);
+  });
+
+  it('un + o un & no rompen el enlace', () => {
+    expect(mailtoHref('ana+morefest@ejemplo.com', { subject: 'Hola', body: 'a&b' })).toBe(
+      'mailto:ana%2Bmorefest@ejemplo.com?subject=Hola&body=a%26b',
+    );
+  });
+
+  it('hasta 1.800 caracteres devuelve el enlace; desde 1.801, null', () => {
+    const base = 'mailto:a@b.co?subject=s&body='.length;
+    expect(mailtoHref('a@b.co', { subject: 's', body: 'x'.repeat(1800 - base) })).toHaveLength(1800);
+    expect(mailtoHref('a@b.co', { subject: 's', body: 'x'.repeat(1801 - base) })).toBeNull();
+    expect(mailtoHref('mafer.urdaneta@ejemplo.com', m)!.length).toBeLessThan(1000);
+  });
+});
+
+describe('lista de protocolo', () => {
+  const tables = [
+    table({ id: 'v5', code: 'VIP-05', area: 'VIP', capacity: 4 }),
+    table({ id: 'p10', code: 'PB-10' }),
+    table({ id: 'p2', code: 'PB-2' }),
+  ];
+  const all = [
+    res({ id: 'a', code: 'AAA111', table_id: 'p10', name: 'Óscar Atencio', guests: 10, total_price: 400,
+      payments: [pay(400)], checked_in: 10, checked_in_at: '2026-11-15T00:14:00+00:00' }),
+    res({ id: 'b', code: 'BBB222', table_id: 'v5', name: 'Ana Bracho', guests: 4, total_price: 600,
+      payments: [pay(300)], notes: 'Patrocinador' }),
+    res({ id: 'c', code: 'CCC333', table_id: 'p2', name: 'Ñeri Paz', guests: 2, total_price: 80 }),
+    res({ id: 'd', code: 'DDD444', table_id: 'p10', name: 'carmen Ríos', guests: 3, total_price: 120 }),
+    res({ id: 'e', code: 'EEE555', table_id: 'p2', name: 'Nora Leal', guests: 2, total_price: 80 }),
+  ];
+
+  it('por mesa: planta baja antes que VIP, PB-2 antes que PB-10 y por nombre dentro de la mesa', () => {
+    expect(protocolRows(tables, all, 'mesa', true).map((r) => `${r.tableCode} ${r.name}`)).toEqual([
+      'PB-2 Nora Leal', 'PB-2 Ñeri Paz', 'PB-10 carmen Ríos', 'PB-10 Óscar Atencio', 'VIP-05 Ana Bracho',
+    ]);
+  });
+
+  it('por nombre: alfabético en español (la Ñ va después de la N), sin mirar mayúsculas ni acentos', () => {
+    expect(protocolRows(tables, all, 'nombre', true).map((r) => r.name)).toEqual([
+      'carmen Ríos', 'Nora Leal', 'Ñeri Paz', 'Óscar Atencio', 'Ana Bracho',
+    ]);
+  });
+
+  it('cada fila lleva saldo, llegada y notas; sin permiso de pagos el saldo va en null', () => {
+    const rows = protocolRows(tables, all, 'mesa', true);
+    expect(rows.find((r) => r.code === 'AAA111')).toEqual({
+      reservationId: 'a', tableId: 'p10', tableCode: 'PB-10', area: 'PB', name: 'Óscar Atencio', guests: 10,
+      code: 'AAA111', balance: 0, checkedIn: 10, checkedInAt: '2026-11-15T00:14:00+00:00', notes: null,
+    });
+    expect(rows.find((r) => r.code === 'BBB222')).toMatchObject({ balance: 300, notes: 'Patrocinador', checkedIn: null });
+    expect(protocolRows(tables, all, 'mesa', false).map((r) => r.balance)).toEqual([null, null, null, null, null]);
+  });
+
+  it('una reserva cuya mesa no está en el mapa no sale en la lista', () => {
+    expect(protocolRows(tables, [res({ table_id: 'retirada' })], 'mesa', true)).toEqual([]);
+  });
+
+  it('totales: reservas, personas esperadas y personas dentro', () => {
+    expect(protocolTotals(protocolRows(tables, all, 'mesa', true))).toEqual({ reservations: 5, expected: 21, inside: 10 });
+    expect(protocolTotals([])).toEqual({ reservations: 0, expected: 0, inside: 0 });
   });
 });
