@@ -4,10 +4,11 @@ import { useCallback, useState } from 'react';
 import { Board } from '@/components/Board';
 import { Login } from '@/components/Login';
 import type { Actions, Msg } from '@/components/actions';
+import type { AppRole } from '@/lib/types';
 import { FIXTURE } from './fixture';
 
 /** Panel con datos de ejemplo y acciones que solo avisan: nada toca Supabase. */
-export function Preview({ pantalla }: { pantalla: 'entrar' | 'panel' }) {
+export function Preview({ pantalla, rol }: { pantalla: 'entrar' | 'panel'; rol: AppRole }) {
   const [msg, setMsg] = useState<Msg | null>(null);
   const dismiss = useCallback(() => setMsg(null), []);
   if (pantalla === 'entrar') return <Login />;
@@ -26,7 +27,7 @@ export function Preview({ pantalla }: { pantalla: 'entrar' | 'panel' }) {
 
   return (
     <Board
-      snap={FIXTURE}
+      snap={{ ...FIXTURE, role: rol }}
       email="vista-previa@morefest.local"
       live
       busy={false}

@@ -3,6 +3,7 @@ import * as load from '../src/lib/ui-load';
 import * as ui from '../src/lib/ui-format';
 import * as map from '../src/lib/ui-map';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
+import { summarize } from '../src/lib/logic';
 
 describe('textos del encabezado', () => {
   it('nombre corto del lugar', () => {
@@ -153,5 +154,22 @@ describe('lista de reservas', () => {
   it('el CSV se nombra con la fecha local, no la UTC', () => {
     expect(ui.csvFileName(new Date(2026, 9, 17, 22, 30))).toBe('morefest-reservas-2026-10-17.csv');
     expect(ui.csvFileName(new Date(2026, 0, 5, 9, 0))).toBe('morefest-reservas-2026-01-05.csv');
+  });
+});
+
+describe('horas de Maracaibo', () => {
+  it('hora de llegada en 12 horas, con espacios normales', () => {
+    expect(ui.arrivalTime('2026-11-21T00:52:00Z')).toBe('8:52 p. m.');
+    expect(ui.arrivalTime('2026-11-20T14:05:00Z')).toBe('10:05 a. m.');
+  });
+});
+
+describe('cobrado con lo retenido', () => {
+  it('el fixture trae un abono retenido y suma en Cobrado sin tocar Por cobrar', () => {
+    expect(FIXTURE.retained).toBe(150);
+    const sin = summarize(FIXTURE.tables, FIXTURE.reservations);
+    const con = summarize(FIXTURE.tables, FIXTURE.reservations, FIXTURE.retained);
+    expect(con.collected).toBe(sin.collected + 150);
+    expect(con.pending).toBe(sin.pending);
   });
 });

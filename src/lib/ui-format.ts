@@ -80,3 +80,13 @@ export function csvFileName(now: Date): string {
   const p = (n: number) => String(n).padStart(2, '0');
   return `morefest-reservas-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.csv`;
 }
+
+/** Zona horaria del evento: las horas se muestran como en Maracaibo aunque el equipo esté en otra parte. */
+export const TZ = 'America/Caracas';
+
+/** Hora de Maracaibo, "8:52 p. m.". Los navegadores usan espacios finos; se dejan espacios normales. */
+export function arrivalTime(iso: string): string {
+  return new Intl.DateTimeFormat('es-VE', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: TZ })
+    .format(new Date(iso))
+    .replace(/\s/g, ' ');
+}

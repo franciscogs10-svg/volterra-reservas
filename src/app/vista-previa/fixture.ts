@@ -33,10 +33,22 @@ const tables: TableRow[] = DEFS.map(([code, x, y, w, h, rot, cap, shape]) => ({
 }));
 
 let pid = 0;
-const P = (amount: number, method: string, day: string) =>
-  ({ id: `p${++pid}`, amount, kind: 'payment', method, created_at: `${day}T15:00:00Z`, reverses_payment_id: null }) as Payment;
-const REV = (of: Payment, day: string) =>
-  ({ id: `p${++pid}`, amount: -of.amount, kind: 'reversal', method: of.method, created_at: `${day}T16:00:00Z`, reverses_payment_id: of.id }) as Payment;
+const P = (amount: number, method: string, day: string): Payment => ({
+  id: `p${++pid}`,
+  amount,
+  kind: 'payment',
+  method,
+  created_at: `${day}T15:00:00Z`,
+  reverses_payment_id: null,
+});
+const REV = (of: Payment, day: string): Payment => ({
+  id: `p${++pid}`,
+  amount: -of.amount,
+  kind: 'reversal',
+  method: of.method,
+  created_at: `${day}T16:00:00Z`,
+  reverses_payment_id: of.id,
+});
 
 const R = (
   id: string,
@@ -49,31 +61,32 @@ const R = (
   total: number,
   payments: Payment[],
   cin?: { n: number; at: string },
-) =>
-  ({
-    id,
-    code,
-    table_id: `t-${table}`,
-    guests,
-    total_price: total,
-    notes: null,
-    name,
-    phone,
-    email,
-    payments,
-    checked_in: cin?.n ?? null,
-    checked_in_at: cin?.at ?? null,
-  }) as Reservation;
+): Reservation => ({
+  id,
+  code,
+  table_id: `t-${table}`,
+  guests,
+  total_price: total,
+  notes: null,
+  name,
+  phone,
+  email,
+  payments,
+  checked_in: cin?.n ?? null,
+  checked_in_at: cin?.at ?? null,
+});
 
 /** Un abono cargado dos veces y corregido con su reverso: el original no se borra. */
 const doble = P(80, 'Efectivo', '2026-10-12');
 
-const event = { id: 'ev-morefest', name: 'MOREFEST', venue: 'Restaurante VOLTERRA, Maracaibo', event_date: null } as EventRow;
+const event: EventRow = { id: 'ev-morefest', name: 'MOREFEST', venue: 'Restaurante VOLTERRA, Maracaibo', event_date: null };
 
-export const FIXTURE = {
+export const FIXTURE: Snapshot = {
   event,
   tables,
   role: 'admin',
+  /** Abono de una reserva cancelada que se retuvo: no tiene mesa en el mapa pero sí cuenta en Cobrado. */
+  retained: 150,
   reservations: [
     R('r01', '7C2E19', 'PB-01', 'Héctor Urdaneta', '+58 414 605 2231', null, 10, 400, [P(200, 'Zelle', '2026-10-08'), P(200, 'Pago móvil', '2026-10-15')]),
     R('r02', 'B41D07', 'PB-02', 'Daniela Fuenmayor', '+58 424 610 7782', null, 4, 180, [P(180, 'Efectivo', '2026-10-11')], { n: 4, at: '2026-11-21T00:52:00Z' }),
@@ -90,4 +103,4 @@ export const FIXTURE = {
     R('r13', '8A1D6E', 'VIP-05', 'Patrocinador A (ejemplo)', null, null, 4, 600, [P(600, 'Transferencia', '2026-10-03')]),
     R('r14', '27B9F3', 'VIP-06', 'Patrocinador B (ejemplo)', null, null, 4, 600, [P(300, 'Transferencia', '2026-10-03')]),
   ],
-} as Snapshot;
+};

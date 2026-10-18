@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { money } from '@/lib/logic';
+import { formatMoney } from '@/lib/logic';
 import type { TableRow } from '@/lib/types';
 import { wholeName } from '@/lib/ui-map';
 import type { Actions } from './actions';
@@ -62,12 +62,12 @@ export function PriceBlock({ table, sp, busy, onSave }: Props) {
         <>
           <p className="kv">
             <span>{wholeName(table)}</span>
-            <b>{table.price ? money(table.price) : 'Por definir'}</b>
+            <b>{table.price ? formatMoney(table.price) : 'Por definir'}</b>
           </p>
           <p className="kv">
             <span>Por puesto</span>
             <b>
-              {sp === null ? 'Por definir' : money(sp)}
+              {sp === null ? 'Por definir' : formatMoney(sp)}
               {sp !== null && <small> {table.seat_price !== null ? '(fijado)' : '(total ÷ puestos)'}</small>}
             </b>
           </p>

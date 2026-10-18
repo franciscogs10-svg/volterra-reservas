@@ -1,7 +1,7 @@
 'use client';
 
 import type { Snapshot } from '@/lib/data';
-import { fmtDate } from '@/lib/logic';
+import { eventDateLabel } from '@/lib/logic';
 import type { AreaCode, TableRow } from '@/lib/types';
 import { FloorMap } from './FloorMap';
 import { Icon } from './Icon';
@@ -39,12 +39,11 @@ export function MapView({ snap, area, onArea, selectedId, onPick, onSaveDate }: 
       <div className="evdate">
         <label htmlFor="ev-date">
           Fecha del evento
-          {/* fmtDate existe antes y después del plan A; la tarea 10 lo cambia por eventDateLabel ("Sábado, 14 de noviembre de 2026"). */}
-          <b>{fmtDate(date)}</b>
+          <b>{eventDateLabel(date)}</b>
         </label>
         <input className="inp" id="ev-date" type="date" defaultValue={date ?? ''} key={date ?? 'sin-fecha'} onChange={(e) => onSaveDate(e.target.value)} />
       </div>
-      <Stats tables={snap.tables} reservations={snap.reservations} />
+      <Stats tables={snap.tables} reservations={snap.reservations} retained={snap.retained} />
       <div className="area-tabs">
         <div className="seg" role="tablist" aria-label="Planta">
           {AREAS.map(([a, label]) => (

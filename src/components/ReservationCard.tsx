@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { balance, money, paid, resStatus } from '@/lib/logic';
+import { balance, formatMoney, paid, resStatus } from '@/lib/logic';
 import type { Reservation } from '@/lib/types';
-import { METHODS, RES_LABEL, payLabels, plural } from '@/lib/ui-format';
+import { METHODS, RES_LABEL, arrivalTime, payLabels, plural } from '@/lib/ui-format';
 import type { Actions } from './actions';
 import { Icon } from './Icon';
 import { StatusPill } from './StatusPill';
@@ -28,7 +28,7 @@ export function ReservationCard({ r, busy, actions }: Props) {
     e.preventDefault();
     const v = Number(amount);
     if (!(v > 0)) return setPayError('Escribe un monto mayor a cero.');
-    if (v > bal + 0.001) return setPayError(`El monto pasa el saldo de ${money(bal)}.`);
+    if (v > bal + 0.001) return setPayError(`El monto pasa el saldo de ${formatMoney(bal)}.`);
     setPayError('');
     if (await actions.pay(r, v, method)) setAmount('');
   }
@@ -53,15 +53,15 @@ export function ReservationCard({ r, busy, actions }: Props) {
       <dl className="res-money">
         <div>
           <dt>Total</dt>
-          <dd>{money(r.total_price)}</dd>
+          <dd>{formatMoney(r.total_price)}</dd>
         </div>
         <div>
           <dt>Pagado</dt>
-          <dd>{money(paid(r))}</dd>
+          <dd>{formatMoney(paid(r))}</dd>
         </div>
         <div>
           <dt>Saldo</dt>
-          <dd className={bal > 0 ? 'due' : undefined}>{money(bal)}</dd>
+          <dd className={bal > 0 ? 'due' : undefined}>{formatMoney(bal)}</dd>
         </div>
       </dl>
 
@@ -76,7 +76,7 @@ export function ReservationCard({ r, busy, actions }: Props) {
                 </b>
                 <small>{p.method}</small>
               </span>
-              <span className="pay-a">{money(p.amount)}</span>
+              <span className="pay-a">{formatMoney(p.amount)}</span>
               <span />
             </li>
           ))}
@@ -134,7 +134,7 @@ export function ReservationCard({ r, busy, actions }: Props) {
         {r.checked_in !== null ? (
           <span className="pill st-in">
             <Icon name="users" />
-            Ingreso confirmado
+            Ingreso confirmado{r.checked_in_at ? ` · ${arrivalTime(r.checked_in_at)}` : ''}
           </span>
         ) : (
           <button type="button" className="btn btn-ok" disabled={busy} onClick={() => actions.checkIn(r)}>
@@ -169,7 +169,7 @@ export function ReservationCard({ r, busy, actions }: Props) {
       {r.checked_in === null && bal > 0 && (
         <p className="res-note">
           <Icon name="info" />
-          <span>Debe {money(bal)}. Se puede dejar entrar; queda el aviso.</span>
+          <span>Debe {formatMoney(bal)}. Se puede dejar entrar; queda el aviso.</span>
         </p>
       )}
     </article>

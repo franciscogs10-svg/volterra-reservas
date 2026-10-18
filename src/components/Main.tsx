@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { loadSnapshot, type Snapshot } from '@/lib/data';
-import { friendlyError } from '@/lib/logic';
+import { formatMoney, friendlyError } from '@/lib/logic';
 import { loadState } from '@/lib/ui-load';
 import type { Reservation, TableRow } from '@/lib/types';
 import type { Actions, Msg } from './actions';
@@ -81,7 +81,7 @@ export function Main({ email }: { email: string }) {
         `${v.guests} ${v.guests === 1 ? 'puesto reservado' : 'puestos reservados'} para ${v.name}.`,
       ),
     pay: (r: Reservation, amount, method) =>
-      run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de $${amount.toFixed(2)} registrado.`),
+      run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de ${formatMoney(amount)} registrado.`),
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),
     cancel: (r) => run(() => sb().rpc('cancel_reservation', { p_res: r.id, p_reason: 'Cancelada desde la app' }), 'Reserva cancelada. Los puestos quedaron libres.'),
     savePrices: (t: TableRow, price, seat) =>

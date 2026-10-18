@@ -58,7 +58,7 @@ export function Board({ snap, email, live, stale, busy, msg, actions, onSaveDate
         <img className="ah-seal" src="/brand/sello-morella.jpg" alt="" width={40} height={40} />
         <div className="ah-title">
           <h1 className="ah-wm">MOREFEST</h1>
-          <p className="ah-sub">Renacer · {placeName(null)}</p>
+          <p className="ah-sub">Renacer · {placeName(snap.event.venue)}</p>
         </div>
         <span className={`live${live ? '' : ' off'}`}>
           <i aria-hidden="true" />

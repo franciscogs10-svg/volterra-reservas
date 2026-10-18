@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { balance, money, paid, resStatus, toCsv } from '@/lib/logic';
+import { balance, formatMoney, paid, resStatus, toCsv } from '@/lib/logic';
 import type { Reservation, TableRow } from '@/lib/types';
 import { RES_LABEL, csvFileName, matchesQuery, plural } from '@/lib/ui-format';
 import { Icon } from './Icon';
@@ -91,7 +91,7 @@ export function ReservationList({ tables, reservations, onPick }: Props) {
                     </span>
                     <span className="rr-side">
                       <StatusPill status={s} label={RES_LABEL[s]} />
-                      <span className={`rr-bal${bal > 0 ? ' due' : ''}`}>{bal > 0 ? `Saldo ${money(bal)}` : `Pagado ${money(paid(r))}`}</span>
+                      <span className={`rr-bal${bal > 0 ? ' due' : ''}`}>{bal > 0 ? `Saldo ${formatMoney(bal)}` : `Pagado ${formatMoney(paid(r))}`}</span>
                     </span>
                   </button>
                 </li>
@@ -146,9 +146,9 @@ export function ReservationList({ tables, reservations, onPick }: Props) {
                       <td className="wrap">{r.name}</td>
                       <td>{r.phone ?? '—'}</td>
                       <td className="n">{r.guests}</td>
-                      <td className="n">{money(r.total_price)}</td>
-                      <td className="n">{money(paid(r))}</td>
-                      <td className={`n${bal > 0 ? ' due' : ''}`}>{money(bal)}</td>
+                      <td className="n">{formatMoney(r.total_price)}</td>
+                      <td className="n">{formatMoney(paid(r))}</td>
+                      <td className={`n${bal > 0 ? ' due' : ''}`}>{formatMoney(bal)}</td>
                       <td>
                         <StatusPill status={s} label={RES_LABEL[s]} />
                       </td>
