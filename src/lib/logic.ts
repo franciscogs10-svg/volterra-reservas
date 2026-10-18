@@ -1,4 +1,4 @@
-import type { Reservation, ResStatus, TableRow, TableStatus } from './types';
+import type { AreaCode, EventRow, Reservation, ResStatus, TableRow, TableStatus } from './types';
 
 export const LABEL: Record<TableStatus, string> = {
   free: 'Disponible',
@@ -115,4 +115,52 @@ export function friendlyError(message: string): string {
   if (/excede los puestos/.test(message)) return 'No pueden entrar más personas que los puestos de la reserva.';
   if (/duplicate|unique/.test(message)) return 'Esta acción ya estaba registrada.';
   return message;
+}
+
+const EVENT_DATE = new Intl.DateTimeFormat('es-VE', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+});
+const PAY_DATE = new Intl.DateTimeFormat('es-VE', {
+  day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Caracas',
+});
+const AREA_NAME: Record<AreaCode, string> = { PB: 'planta baja', VIP: 'planta alta VIP' };
+
+/** "Sábado, 14 de noviembre de 2026", o "Fecha por anunciar" si el evento no tiene fecha. */
+export function eventDateLabel(d: string | null): string {
+  if (!d) return 'Fecha por anunciar';
+  const s = EVENT_DATE.format(new Date(`${d}T00:00:00Z`));
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Correo de confirmación que Alejandro envía desde su propia app de correo (spec, sección 6).
+ *  Los reversos netean: un pago revertido y su reverso no se listan, y lo listado suma lo pagado. */
+export function confirmationMessage(r: Reservation, table: TableRow, ev: EventRow): { subject: string; body: string } {
+  const reversed = new Set(r.payments.map((p) => p.reverses_payment_id));
+  const lines = r.payments
+    .filter((p) => p.kind === 'payment' && !reversed.has(p.id))
+    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+    .map((p) => `- ${PAY_DATE.format(new Date(p.created_at))}, ${p.method}: ${formatMoney(p.amount)}`);
+  const bal = balance(r);
+  const body = [
+    `Hola, ${r.name.trim()}:`,
+    '',
+    'Te confirmamos tu reserva para MOREFEST.',
+    '',
+    `Mesa ${table.code}, ${AREA_NAME[table.area]}`,
+    `${r.guests} ${r.guests === 1 ? 'persona' : 'personas'}`,
+    eventDateLabel(ev.event_date),
+    ...(ev.venue ? [ev.venue] : []),
+    `Código de reserva: ${r.code}`,
+    '',
+    `Total: ${formatMoney(r.total_price)}`,
+    'Abonos:',
+    ...(lines.length ? lines : ['- Sin abonos todavía']),
+    `Pagado: ${formatMoney(paid(r))}`,
+    r.total_price > 0 && bal <= 0 ? 'Pagado completo' : `Saldo pendiente: ${formatMoney(Math.max(0, bal))}`,
+    '',
+    'En la puerta te ubicamos por tu nombre o por el código de la reserva.',
+    '',
+    'Corporación Montiel',
+  ].join('\n');
+  return { subject: `MOREFEST · Confirmación de tu reserva (Mesa ${table.code})`, body };
 }

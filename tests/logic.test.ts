@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  balance, formatMoney, friendlyError, isValidEmail, money, resStatus, seatPrice, summarize, tableStatus, toCsv,
+  balance, confirmationMessage, eventDateLabel, formatMoney, friendlyError, isValidEmail, money, resStatus, seatPrice,
+  summarize, tableStatus, toCsv,
 } from '../src/lib/logic';
-import type { Payment, Reservation, TableRow } from '../src/lib/types';
+import type { EventRow, Payment, Reservation, TableRow } from '../src/lib/types';
 
 const table = (over: Partial<TableRow> = {}): TableRow => ({
   id: 't1', code: 'PB-04', area: 'PB', capacity: 10, price: null, seat_price: null,
@@ -108,5 +109,75 @@ describe('montos y correo', () => {
     expect(isValidEmail('mafer urdaneta@ejemplo.com')).toBe(false);
     expect(isValidEmail('a@@b.co')).toBe(false);
     expect(isValidEmail('')).toBe(false);
+  });
+});
+
+const ev = (over: Partial<EventRow> = {}): EventRow => ({
+  id: 'e1', name: 'MOREFEST', venue: 'Restaurante VOLTERRA, Maracaibo', event_date: '2026-11-14', ...over,
+});
+
+describe('fecha del evento', () => {
+  it('en español con el día de la semana, o por anunciar', () => {
+    expect(eventDateLabel('2026-11-14')).toBe('Sábado, 14 de noviembre de 2026');
+    expect(eventDateLabel(null)).toBe('Fecha por anunciar');
+  });
+});
+
+describe('mensaje de confirmación', () => {
+  const t = table({ code: 'PB-07' });
+  const conSaldo = res({
+    name: 'José Ángel Añez', code: 'A3F91C', guests: 6, total_price: 300,
+    payments: [
+      pay(140, { id: 'p2', method: 'Zelle', created_at: '2026-10-14T15:00:00+00:00' }),
+      pay(100, { id: 'p1', method: 'Pago móvil', created_at: '2026-10-10T15:00:00+00:00' }),
+    ],
+  });
+
+  it('asunto con la mesa; cuerpo con abonos en orden de fecha, pagado y saldo', () => {
+    const m = confirmationMessage(conSaldo, t, ev());
+    expect(m.subject).toBe('MOREFEST · Confirmación de tu reserva (Mesa PB-07)');
+    expect(m.body).toBe([
+      'Hola, José Ángel Añez:',
+      '',
+      'Te confirmamos tu reserva para MOREFEST.',
+      '',
+      'Mesa PB-07, planta baja',
+      '6 personas',
+      'Sábado, 14 de noviembre de 2026',
+      'Restaurante VOLTERRA, Maracaibo',
+      'Código de reserva: A3F91C',
+      '',
+      'Total: $300,00',
+      'Abonos:',
+      '- 10/10/2026, Pago móvil: $100,00',
+      '- 14/10/2026, Zelle: $140,00',
+      'Pagado: $240,00',
+      'Saldo pendiente: $60,00',
+      '',
+      'En la puerta te ubicamos por tu nombre o por el código de la reserva.',
+      '',
+      'Corporación Montiel',
+    ].join('\n'));
+  });
+
+  it('un pago revertido y su reverso se netean: no se listan y lo listado suma lo pagado', () => {
+    const r = res({
+      total_price: 200,
+      payments: [
+        pay(100, { id: 'p1', method: 'Efectivo' }),
+        pay(200, { id: 'p2', method: 'Zelle', created_at: '2026-10-13T02:30:00+00:00' }), // 12/10 a las 10:30 p. m. en Maracaibo
+        pay(-100, { id: 'p3', kind: 'reversal', method: 'Efectivo', reverses_payment_id: 'p1' }),
+      ],
+    });
+    const { body } = confirmationMessage(r, t, ev());
+    expect(body).toContain('Abonos:\n- 12/10/2026, Zelle: $200,00\nPagado: $200,00\nPagado completo\n');
+    expect(body).not.toContain('Efectivo');
+    expect(body).not.toContain('Saldo pendiente');
+  });
+
+  it('sin fecha, sin lugar y sin abonos; en VIP dice planta alta', () => {
+    const { body } = confirmationMessage(res({ guests: 1 }), table({ code: 'VIP-05', area: 'VIP' }), ev({ event_date: null, venue: null }));
+    expect(body).toContain('Mesa VIP-05, planta alta VIP\n1 persona\nFecha por anunciar\nCódigo de reserva: AB12CD\n');
+    expect(body).toContain('Abonos:\n- Sin abonos todavía\nPagado: $0,00\nSaldo pendiente: $100,00\n');
   });
 });
