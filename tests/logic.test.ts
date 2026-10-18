@@ -117,6 +117,17 @@ describe('errores', () => {
     expect(friendlyError('reserva ya cancelada')).toBe('Esa reserva ya estaba cancelada.');
     expect(friendlyError('falta el nombre')).toBe('Escribe el nombre del cliente.');
   });
+  it('traduce los errores de mesa, llegada y pagos que faltaban', () => {
+    expect(friendlyError('mesa inexistente')).toBe('Esa mesa ya no existe. Recarga el mapa.');
+    expect(friendlyError('mesa retirada')).toBe('Esa mesa fue retirada del mapa y ya no admite reservas.');
+    expect(friendlyError('reserva no activa')).toBe('Esa reserva ya no está activa: puede estar cancelada. Revisa el mapa.');
+    expect(friendlyError('reserva no confirmada')).toBe('Esa reserva no está confirmada, así que no se puede registrar la llegada.');
+    expect(friendlyError('los pagos no se editan ni borran; usar reverse_payment')).toBe('Los pagos no se editan ni se borran: usa "Revertir" y deja el motivo.');
+  });
+  it('ningún error técnico de las migraciones llega crudo a la pantalla', () => {
+    const raw = ['mesa inexistente', 'mesa retirada', 'reserva no activa', 'reserva no confirmada', 'reserva inexistente', 'pago inexistente'];
+    for (const m of raw) expect(friendlyError(m)).not.toBe(m);
+  });
 });
 
 describe('montos y correo', () => {

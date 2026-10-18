@@ -126,6 +126,11 @@ export function friendlyError(message: string): string {
   if (/monto inválido/.test(message)) return 'El monto debe ser mayor que cero.';
   if (/falta el método de pago/.test(message)) return 'Elige el método de pago.';
   if (/falta el nombre/.test(message)) return 'Escribe el nombre del cliente.';
+  if (/mesa inexistente/.test(message)) return 'Esa mesa ya no existe. Recarga el mapa.';
+  if (/mesa retirada/.test(message)) return 'Esa mesa fue retirada del mapa y ya no admite reservas.';
+  if (/reserva no activa/.test(message)) return 'Esa reserva ya no está activa: puede estar cancelada. Revisa el mapa.';
+  if (/reserva no confirmada/.test(message)) return 'Esa reserva no está confirmada, así que no se puede registrar la llegada.';
+  if (/no se editan ni borran/.test(message)) return 'Los pagos no se editan ni se borran: usa "Revertir" y deja el motivo.';
   if (/reserva inexistente/.test(message)) return 'Esa reserva ya no existe. Revisa el mapa.';
   if (/pago inexistente/.test(message)) return 'Ese pago ya no existe. Revisa la reserva.';
   if (/ya revertido/.test(message)) return 'Ese pago ya estaba revertido.';
