@@ -60,7 +60,7 @@ beforeAll(async () => {
     '0004_puestos_sueltos.sql',
     '0005_vip_patrocinadores.sql',
     '0006_sofas_en_el_plano.sql',
-    // 0007 es de la rama fix/plano-vip-sofas (0007_sofas_mirando_pantalla.sql); al fusionar va antes de esta.
+    '0007_sofas_mirando_pantalla.sql',
     '0008_blindaje.sql',
   ]) {
     await db.exec(sql(f));
@@ -84,6 +84,15 @@ describe('datos iniciales', () => {
       { code: 'VIP-05', kind: 'sofa', capacity: 4 },
       { code: 'VIP-06', kind: 'sofa', capacity: 4 },
       { code: 'VIP-07', kind: 'sofa', capacity: 4 },
+    ]);
+  });
+
+  it('los sofás VIP van paralelos a la baranda, mirando a la pantalla LED, sin mover su centro', async () => {
+    const s = (await db.query("select code, map_x::int as x, map_y::int as y, map_w::int as w, map_h::int as h, map_rot::int as rot from tables where kind = 'sofa' order by code")).rows;
+    expect(s).toEqual([
+      { code: 'VIP-05', x: 280, y: 445, w: 96, h: 40, rot: 48 },
+      { code: 'VIP-06', x: 352, y: 520, w: 96, h: 40, rot: 48 },
+      { code: 'VIP-07', x: 420, y: 598, w: 96, h: 40, rot: 48 },
     ]);
   });
 
