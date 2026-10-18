@@ -62,6 +62,7 @@ beforeAll(async () => {
     '0006_sofas_en_el_plano.sql',
     '0007_sofas_mirando_pantalla.sql',
     '0008_blindaje.sql',
+    '0009_morefest.sql',
   ]) {
     await db.exec(sql(f));
   }
@@ -257,5 +258,66 @@ describe('permisos y auditoría', () => {
     expect(r.n).toBeGreaterThan(3);
     const p = await one<{ n: number }>("select count(*)::int as n from audit_logs where table_name = 'payments'");
     expect(p.n).toBeGreaterThan(0);
+  });
+});
+
+describe('MOREFEST (0009)', () => {
+  let res: string;
+  let door: string;
+  const emailOf = async (id: string) =>
+    (await one<{ email: string | null }>(
+      'select c.email from customers c join reservations r on r.customer_id = c.id where r.id = $1', [id])).email;
+
+  beforeAll(async () => {
+    res = await reserveAt('PB-12', 2, 80, 0);
+    door = (await one<{ id: string }>("insert into auth.users (email) values ('puerta@volterra.test') returning id")).id;
+    await db.query("update profiles set role = 'door', active = true where id = $1", [door]);
+  });
+
+  it('el evento se llama MOREFEST y queda en el restaurante VOLTERRA', async () => {
+    expect(await one('select name, venue from events')).toEqual({ name: 'MOREFEST', venue: 'Restaurante VOLTERRA, Maracaibo' });
+  });
+
+  it('guarda el correo en minúsculas y sin espacios a los lados', async () => {
+    await db.query('select set_customer_email($1, $2)', [res, '  Mafer.Urdaneta@Ejemplo.COM ']);
+    expect(await emailOf(res)).toBe('mafer.urdaneta@ejemplo.com');
+  });
+
+  it('rechaza un correo sin formato, también por fuera de la función', async () => {
+    await expect(db.query('select set_customer_email($1, $2)', [res, 'mafer@ejemplo'])).rejects.toThrow(/customers_email_format/);
+    await expect(
+      db.query("update customers set email = 'sin arroba' where id = (select customer_id from reservations where id = $1)", [res]),
+    ).rejects.toThrow(/customers_email_format/);
+    expect(await emailOf(res)).toBe('mafer.urdaneta@ejemplo.com');
+  });
+
+  it('null o un texto vacío borran el correo', async () => {
+    await db.query('select set_customer_email($1, $2)', [res, null]);
+    expect(await emailOf(res)).toBeNull();
+    await db.query('select set_customer_email($1, $2)', [res, 'a@b.co']);
+    await db.query('select set_customer_email($1, $2)', [res, '   ']);
+    expect(await emailOf(res)).toBeNull();
+  });
+
+  it('el vendedor sí cambia el correo; la puerta no', async () => {
+    await as(seller);
+    await db.query('select set_customer_email($1, $2)', [res, 'vendedor@cliente.com']);
+    await as(door);
+    await expect(db.query('select set_customer_email($1, $2)', [res, 'puerta@cliente.com'])).rejects.toThrow(/forbidden/);
+    await as(admin);
+    expect(await emailOf(res)).toBe('vendedor@cliente.com');
+  });
+
+  it('por la API: sin sesión no se ejecuta; con sesión de vendedor sí', async () => {
+    const call = `select set_customer_email('${res}'::uuid, 'api@cliente.com')`;
+    await expect(viaApi('anon', null, call)).rejects.toThrow(/permission denied/);
+    await viaApi('authenticated', seller, call);
+    expect(await emailOf(res)).toBe('api@cliente.com');
+  });
+
+  it('una reserva inexistente se rechaza', async () => {
+    await expect(
+      db.query('select set_customer_email($1, $2)', ['00000000-0000-0000-0000-000000000000', 'a@b.co']),
+    ).rejects.toThrow(/reserva inexistente/);
   });
 });
