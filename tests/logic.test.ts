@@ -69,7 +69,11 @@ describe('resumen y CSV', () => {
   it('exporta CSV con comillas escapadas', () => {
     const csv = toCsv(tables, [res({ name: 'Ana "la jefa"' })]);
     expect(csv.split('\n')[1]).toContain('"Ana ""la jefa"""');
-    expect(csv.split('\n')[0]).toBe('"mesa","reserva","cliente","whatsapp","puestos","total","pagado","saldo","estado"');
+    expect(csv.split('\n')[0]).toBe('"mesa","reserva","cliente","whatsapp","correo","puestos","total","pagado","saldo","estado"');
+  });
+  it('el CSV lleva el correo del cliente, o vacío si no hay', () => {
+    expect(toCsv(tables, [res({ email: 'ana@ejemplo.com' })]).split('\n')[1]).toContain('"+58 412","ana@ejemplo.com","4"');
+    expect(toCsv(tables, [res()]).split('\n')[1]).toContain('"+58 412","","4"');
   });
   it('un nombre con fórmula no se ejecuta al abrir el CSV en Excel', () => {
     const row = (name: string) => toCsv(tables, [res({ name })]).split('\n')[1];
@@ -87,6 +91,15 @@ describe('resumen y CSV', () => {
 describe('errores', () => {
   it('traduce el error de capacidad', () => {
     expect(friendlyError('mesa sin puestos suficientes (3 libres)')).toMatch(/Ya no quedan puestos/);
+  });
+  it('traduce los errores del correo y del reverso', () => {
+    expect(friendlyError('new row for relation "customers" violates check constraint "customers_email_format"')).toBe(
+      'El correo no tiene un formato válido. Revisa que tenga @ y un dominio.',
+    );
+    expect(friendlyError('reserva inexistente')).toBe('Esa reserva ya no existe. Revisa el mapa.');
+    expect(friendlyError('pago inexistente')).toBe('Ese pago ya no existe. Revisa la reserva.');
+    expect(friendlyError('pago ya revertido')).toBe('Ese pago ya estaba revertido.');
+    expect(friendlyError('el reverso exige motivo')).toBe('Escribe el motivo del reverso.');
   });
 });
 

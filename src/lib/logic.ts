@@ -88,7 +88,7 @@ const csvCell = (v: string | number) => `"${neutralize(String(v)).replace(/"/g, 
 
 export function toCsv(tables: TableRow[], all: Reservation[]) {
   const code = new Map(tables.map((t) => [t.id, t.code]));
-  const rows = [['mesa', 'reserva', 'cliente', 'whatsapp', 'puestos', 'total', 'pagado', 'saldo', 'estado']];
+  const rows = [['mesa', 'reserva', 'cliente', 'whatsapp', 'correo', 'puestos', 'total', 'pagado', 'saldo', 'estado']];
   [...all]
     .sort((a, b) => (code.get(a.table_id) ?? '').localeCompare(code.get(b.table_id) ?? ''))
     .forEach((r) =>
@@ -97,6 +97,7 @@ export function toCsv(tables: TableRow[], all: Reservation[]) {
         r.code,
         r.name,
         r.phone ?? '',
+        r.email ?? '',
         String(r.guests),
         r.total_price.toFixed(2),
         paid(r).toFixed(2),
@@ -113,6 +114,11 @@ export function friendlyError(message: string): string {
   if (/anticipo/.test(message)) return 'El anticipo no puede ser mayor al total.';
   if (/forbidden/.test(message)) return 'Tu sesión no tiene permiso para esta acción. Vuelve a entrar.';
   if (/excede los puestos/.test(message)) return 'No pueden entrar más personas que los puestos de la reserva.';
+  if (/customers_email_format/.test(message)) return 'El correo no tiene un formato válido. Revisa que tenga @ y un dominio.';
+  if (/reserva inexistente/.test(message)) return 'Esa reserva ya no existe. Revisa el mapa.';
+  if (/pago inexistente/.test(message)) return 'Ese pago ya no existe. Revisa la reserva.';
+  if (/ya revertido/.test(message)) return 'Ese pago ya estaba revertido.';
+  if (/exige motivo/.test(message)) return 'Escribe el motivo del reverso.';
   if (/duplicate|unique/.test(message)) return 'Esta acción ya estaba registrada.';
   return message;
 }
