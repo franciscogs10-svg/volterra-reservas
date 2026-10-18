@@ -89,7 +89,7 @@ export function Board({ snap, email, live, stale, busy, msg, actions, onSaveDate
           )}
           {view === 'reservas' && <ReservationList tables={snap.tables} reservations={snap.reservations} onPick={pick} />}
         </main>
-        <Panel table={selected} reservations={snap.reservations} actions={actions} busy={busy} modal={mobile} onClose={close} />
+        <Panel table={selected} event={snap.event} role={snap.role} reservations={snap.reservations} actions={actions} busy={busy} modal={mobile} onClose={close} />
       </div>
       <Toast msg={msg} onDone={onDismissMsg} />
     </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { LABEL, forTable, seatPrice, soldSeats, tableStatus } from '@/lib/logic';
-import type { Reservation, TableRow } from '@/lib/types';
+import type { AppRole, EventRow, Reservation, TableRow } from '@/lib/types';
 import { plural, seatBar } from '@/lib/ui-format';
 import { kindName, thisName } from '@/lib/ui-map';
 import type { Actions } from './actions';
@@ -14,6 +14,8 @@ import { StatusPill } from './StatusPill';
 
 interface Props {
   table: TableRow | null;
+  event: EventRow;
+  role: AppRole | null;
   reservations: Reservation[];
   actions: Actions;
   busy: boolean;
@@ -23,7 +25,7 @@ interface Props {
 }
 
 /** Hoja de la mesa. En el celular toma el foco, se cierra con Escape, con la X o tocando fuera, y devuelve el foco a la mesa. */
-export function Panel({ table, reservations, actions, busy, modal, onClose }: Props) {
+export function Panel({ table, event, role, reservations, actions, busy, modal, onClose }: Props) {
   const title = useRef<HTMLHeadingElement>(null);
   const tableId = table?.id ?? null;
 
@@ -102,7 +104,7 @@ export function Panel({ table, reservations, actions, busy, modal, onClose }: Pr
               <span className="muted">{list.length}</span>
             </div>
             {list.map((r) => (
-              <ReservationCard key={r.id} r={r} busy={busy} actions={actions} />
+              <ReservationCard key={r.id} r={r} table={table} event={event} role={role} busy={busy} actions={actions} />
             ))}
           </>
         )}

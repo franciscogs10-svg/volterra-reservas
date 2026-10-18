@@ -23,6 +23,7 @@ export function Preview({ pantalla, rol }: { pantalla: 'entrar' | 'panel'; rol: 
     checkIn: (r) => aviso(`llegada de ${r.name}.`),
     cancel: (r) => aviso(`cancelación de ${r.name}.`),
     savePrices: (t) => aviso(`precios de ${t.code}.`),
+    notify: (text, err = false) => setMsg({ text, err }),
     setEmail: (r, email) => aviso(email ? `correo ${email} para ${r.name}.` : `correo de ${r.name} borrado.`),
   };
 

@@ -12,6 +12,8 @@ export interface Actions {
   cancel: (r: Reservation) => Promise<boolean>;
   savePrices: (t: TableRow, price: number | null, seat: number | null) => Promise<boolean>;
   /** null borra el correo. */
+  /** Aviso flotante sin pasar por la base (copiar al portapapeles, abrir el correo). */
+  notify: (text: string, err?: boolean) => void;
   setEmail: (r: Reservation, email: string | null) => Promise<boolean>;
 }
 

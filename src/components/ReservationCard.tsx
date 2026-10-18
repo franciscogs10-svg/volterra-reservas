@@ -2,28 +2,36 @@
 
 import { useState } from 'react';
 import { balance, formatMoney, paid, resStatus } from '@/lib/logic';
-import type { Reservation } from '@/lib/types';
+import type { AppRole, EventRow, Reservation, TableRow } from '@/lib/types';
 import { METHODS, RES_LABEL, arrivalTime, payLabels, plural } from '@/lib/ui-format';
+import { seesPayments } from '@/lib/ui-payments';
 import type { Actions } from './actions';
 import { EmailRow } from './EmailRow';
 import { Icon } from './Icon';
+import { MailBox } from './MailBox';
 import { StatusPill } from './StatusPill';
 
 interface Props {
   r: Reservation;
+  table: TableRow;
+  event: EventRow;
+  role: AppRole | null;
   busy: boolean;
   actions: Actions;
 }
 
 /** Una reserva dentro de la hoja: montos, movimientos, cobro, llegada y cancelación. */
-export function ReservationCard({ r, busy, actions }: Props) {
+export function ReservationCard({ r, table, event, role, busy, actions }: Props) {
   const [confirm, setConfirm] = useState(false);
+  const [mailOpen, setMailOpen] = useState(false);
   const [amount, setAmount] = useState(balance(r).toFixed(2));
   const [method, setMethod] = useState(METHODS[0]);
   const [payError, setPayError] = useState('');
   const bal = balance(r);
   const s = resStatus(r);
   const labels = payLabels(r.payments);
+  const sees = seesPayments(role);
+  const mailId = `mail-${r.id}`;
 
   async function submitPay(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -145,6 +153,12 @@ export function ReservationCard({ r, busy, actions }: Props) {
             Confirmar llegada
           </button>
         )}
+        {sees && (
+          <button type="button" className="btn btn-secondary" aria-expanded={mailOpen} aria-controls={mailId} onClick={() => setMailOpen(!mailOpen)}>
+            <Icon name="mail" />
+            Confirmación por correo
+          </button>
+        )}
         {confirm ? (
           <>
             <button
@@ -168,6 +182,8 @@ export function ReservationCard({ r, busy, actions }: Props) {
           </button>
         )}
       </div>
+
+      {sees && mailOpen && <MailBox id={mailId} r={r} table={table} event={event} notify={actions.notify} />}
 
       {r.checked_in === null && bal > 0 && (
         <p className="res-note">

@@ -3,6 +3,7 @@ import * as load from '../src/lib/ui-load';
 import * as ui from '../src/lib/ui-format';
 import * as map from '../src/lib/ui-map';
 import * as mail from '../src/lib/ui-mail';
+import * as pay from '../src/lib/ui-payments';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
 import { summarize } from '../src/lib/logic';
 
@@ -186,5 +187,39 @@ describe('correo del cliente', () => {
   it('rechaza un correo sin dominio con un mensaje que dice cómo arreglarlo', () => {
     expect(mail.emailError('mafer@ejemplo')).toBe('Revisa el correo: debe verse como nombre@correo.com.');
     expect(mail.emailError('mafer urdaneta@ejemplo.com')).toBe('Revisa el correo: debe verse como nombre@correo.com.');
+  });
+});
+
+describe('confirmación por correo', () => {
+  const corto = {
+    subject: 'MOREFEST · Confirmación de tu reserva (Mesa PB-05)',
+    body: 'Hola, María Fernanda Urdaneta:\n\nTe confirmamos tu reserva para MOREFEST.',
+  };
+  it('sin correo no hay enlace y el motivo dice qué hacer', () => {
+    const s = mail.mailState(null, corto);
+    expect(s.href).toBeNull();
+    expect(s.reason).toMatch(/Falta el correo del cliente/);
+  });
+  it('con correo válido arma el enlace mailto', () => {
+    const s = mail.mailState('mafer.urdaneta@ejemplo.com', corto);
+    expect(s.href).toMatch(/^mailto:mafer\.urdaneta@ejemplo\.com\?subject=/);
+    expect(s.reason).toBe('');
+  });
+  it('un correo guardado mal escrito no abre la app de correo', () => {
+    expect(mail.mailState('mafer@ejemplo', corto).href).toBeNull();
+  });
+  it('si el mensaje no cabe en un enlace, pide copiarlo', () => {
+    const s = mail.mailState('mafer.urdaneta@ejemplo.com', { subject: 's', body: 'x'.repeat(2000) });
+    expect(s.href).toBeNull();
+    expect(s.reason).toMatch(/Copiar mensaje/);
+  });
+  it('el texto copiado lleva asunto y cuerpo', () => {
+    expect(mail.clipboardText(corto)).toBe(`Asunto: ${corto.subject}\n\n${corto.body}`);
+  });
+});
+
+describe('quién ve pagos', () => {
+  it('ven pagos admin y vendedor; la puerta y el rol vacío no', () => {
+    expect([pay.seesPayments('admin'), pay.seesPayments('seller'), pay.seesPayments('door'), pay.seesPayments(null)]).toEqual([true, true, false, false]);
   });
 });

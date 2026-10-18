@@ -343,3 +343,10 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
 .mail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;min-height:44px;font-size:14px;color:var(--fg-dim)}
 .mail-row b{color:var(--fg);font-weight:600}
 .mail-row small{overflow-wrap:anywhere}
+/* ---------- confirmación por correo: vista previa y dos acciones, una sobre otra ---------- */
+.mailbox{display:flex;flex-direction:column;gap:12px;padding:12px;border-radius:var(--r-ctl);background:var(--surface-2)}
+.mail-preview{border-radius:var(--r-ctl);background:var(--bg);border:1px solid var(--hair);overflow:hidden}
+.mp-head{display:grid;grid-template-columns:64px minmax(0,1fr);gap:6px 10px;margin:0;padding:12px 14px;border-bottom:1px solid var(--hair);font-size:14px}
+.mp-head dt{color:var(--fg-mute)}
+.mp-head dd{margin:0;color:var(--fg);overflow-wrap:anywhere}
+.mp-body{margin:0;padding:14px;font:400 15px/1.55 var(--font-ui);color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}

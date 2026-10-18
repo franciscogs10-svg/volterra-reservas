@@ -105,6 +105,7 @@ export function Main({ email }: { email: string }) {
       run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de ${formatMoney(amount)} registrado.`),
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),
     cancel: (r) => run(() => sb().rpc('cancel_reservation', { p_res: r.id, p_reason: 'Cancelada desde la app' }), 'Reserva cancelada. Los puestos quedaron libres.'),
+    notify: (text, err = false) => setMsg({ text, err }),
     savePrices: (t: TableRow, price, seat) =>
       run(async () => {
         const { data, error } = await sb().from('tables').update({ price, seat_price: seat }).eq('id', t.id).select('id');
