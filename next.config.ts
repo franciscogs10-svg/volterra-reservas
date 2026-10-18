@@ -32,8 +32,13 @@ function securityHeaders() {
   ];
 }
 
+/** La vista previa con datos de ejemplo (src/app/vista-previa/page.dev.tsx) solo existe con `next dev`:
+ *  en el build de producción un archivo `page.dev.tsx` no es una ruta. */
+const pageExtensions = process.env.NODE_ENV === 'production' ? ['tsx', 'ts'] : ['dev.tsx', 'tsx', 'ts'];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  pageExtensions,
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders() }];
   },

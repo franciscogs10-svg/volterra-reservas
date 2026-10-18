@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { loadSnapshot, type Snapshot } from '@/lib/data';
-import { fmtDate, friendlyError } from '@/lib/logic';
-import type { AreaCode, Reservation, TableRow } from '@/lib/types';
-import { FloorMap } from './FloorMap';
-import { Panel, type Actions } from './Panel';
-import { ReservationList } from './ReservationList';
-import { Stats } from './Stats';
+import { friendlyError } from '@/lib/logic';
+import { loadState } from '@/lib/ui-load';
+import type { Reservation, TableRow } from '@/lib/types';
+import type { Actions, Msg } from './actions';
+import { Board } from './Board';
 
 type Result = PromiseLike<{ error: { message: string } | null }>;
 
@@ -16,10 +15,9 @@ export function Main({ email }: { email: string }) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [loadError, setLoadError] = useState('');
   const [live, setLive] = useState(false);
-  const [area, setArea] = useState<AreaCode>('PB');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<{ text: string; err: boolean } | null>(null);
+  const [msg, setMsg] = useState<Msg | null>(null);
   const [busy, setBusy] = useState(false);
+  const dismiss = useCallback(() => setMsg(null), []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async () => {
@@ -101,13 +99,8 @@ export function Main({ email }: { email: string }) {
     }, 'Fecha del evento guardada.');
   }
 
-  function pick(t: TableRow) {
-    setArea(t.area);
-    setSelectedId(t.id);
-    setMsg(null);
-  }
-
-  if (loadError) {
+  const state = loadState(snap !== null, loadError);
+  if (state.screen === 'error') {
     return (
       <div className="wrap center">
         <h1>VOLTERRA</h1>
@@ -121,67 +114,18 @@ export function Main({ email }: { email: string }) {
   }
   if (!snap) return <div className="wrap center note">Cargando…</div>;
 
-  const selected = snap.tables.find((t) => t.id === selectedId) ?? null;
-
   return (
-    <div className="wrap">
-      <header>
-        <div>
-          <h1>VOLTERRA</h1>
-          <div className="sub">
-            Reservas y acceso · Evento: {fmtDate(snap.event.event_date)} · <span className={`live${live ? '' : ' off'}`}>{live ? 'en vivo' : 'sin conexión en vivo'}</span>
-          </div>
-        </div>
-        <div className="bar">
-          <label style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            Fecha del evento
-            <input
-              type="date"
-              style={{ width: 'auto' }}
-              defaultValue={snap.event.event_date ?? ''}
-              key={snap.event.event_date ?? 'sin-fecha'}
-              onChange={(e) => saveDate(e.target.value)}
-            />
-          </label>
-          <button onClick={() => supabase().auth.signOut()} title={email}>
-            Salir
-          </button>
-        </div>
-      </header>
-
-      <Stats tables={snap.tables} reservations={snap.reservations} />
-
-      <div className="main">
-        <section className="card">
-          <div className="tabs">
-            {(['PB', 'VIP'] as AreaCode[]).map((a) => (
-              <button
-                key={a}
-                aria-pressed={area === a}
-                onClick={() => {
-                  setArea(a);
-                  setSelectedId(null);
-                }}
-              >
-                {a === 'PB' ? 'Planta baja' : 'Planta alta VIP'}
-              </button>
-            ))}
-            <div className="legend">
-              <span><i style={{ background: 'var(--free)' }} />Disponible</span>
-              <span><i style={{ background: 'var(--part)' }} />Parcial</span>
-              <span><i style={{ background: 'var(--held)' }} />Reservada</span>
-              <span><i style={{ background: 'var(--paid)' }} />Pagada</span>
-              <span><i style={{ background: 'var(--in)' }} />Ocupada</span>
-            </div>
-          </div>
-          <FloorMap area={area} tables={snap.tables} reservations={snap.reservations} selected={selectedId} onPick={pick} />
-          <p className="note">Las mesas se venden enteras o por puestos. El número bajo el código son los puestos vendidos sobre la capacidad.</p>
-        </section>
-
-        <Panel table={selected} reservations={snap.reservations} actions={actions} busy={busy} msg={msg} />
-      </div>
-
-      <ReservationList tables={snap.tables} reservations={snap.reservations} onPick={pick} />
-    </div>
+    <Board
+      snap={snap}
+      email={email}
+      live={live && !state.stale}
+      stale={state.stale}
+      busy={busy}
+      msg={msg}
+      actions={actions}
+      onSaveDate={saveDate}
+      onSignOut={() => supabase().auth.signOut()}
+      onDismissMsg={dismiss}
+    />
   );
 }

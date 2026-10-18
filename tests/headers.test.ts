@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import config from '../next.config';
 
 async function headersFor(supabaseUrl: string | undefined) {
@@ -42,5 +42,21 @@ describe('cabeceras de seguridad', () => {
   it('sin URL de Supabase configurada cae a los dominios de Supabase', async () => {
     const csp = (await headersFor(undefined))['content-security-policy'];
     expect(csp).toContain("connect-src 'self' https://*.supabase.co wss://*.supabase.co");
+  });
+});
+
+describe('vista previa de desarrollo', () => {
+  it('existe con next dev y desaparece del build de producción', async () => {
+    expect(config.pageExtensions).toContain('dev.tsx');
+    const before = process.env.NODE_ENV;
+    Object.assign(process.env, { NODE_ENV: 'production' });
+    vi.resetModules();
+    try {
+      const prod = (await import('../next.config')).default;
+      expect(prod.pageExtensions).toEqual(['tsx', 'ts']);
+    } finally {
+      Object.assign(process.env, { NODE_ENV: before });
+      vi.resetModules();
+    }
   });
 });

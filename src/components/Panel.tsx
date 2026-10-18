@@ -3,16 +3,9 @@
 import { useState } from 'react';
 import { LABEL, balance, forTable, money, paid, resStatus, seatPrice, soldSeats, tableStatus } from '@/lib/logic';
 import type { Reservation, TableRow } from '@/lib/types';
+import type { Actions } from './actions';
 
 const METHODS = ['Efectivo', 'Zelle', 'Pago móvil', 'Transferencia'];
-
-export interface Actions {
-  reserve: (t: TableRow, v: { name: string; phone: string; guests: number; total: number; deposit: number; method: string }) => Promise<boolean>;
-  pay: (r: Reservation, amount: number, method: string) => Promise<boolean>;
-  checkIn: (r: Reservation) => Promise<boolean>;
-  cancel: (r: Reservation) => Promise<boolean>;
-  savePrices: (t: TableRow, price: number | null, seat: number | null) => Promise<boolean>;
-}
 
 interface Props {
   table: TableRow | null;
