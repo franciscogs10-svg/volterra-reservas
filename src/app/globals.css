@@ -125,3 +125,31 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+
+/* ---------- entrar: la foto de Morella manda (encuadre del prototipo: 83% 50% en el celular) ---------- */
+.login-screen{position:relative;isolation:isolate;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+.login-photo{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.login-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:83% 50%;animation:revela 1400ms var(--ease-out) both}
+.login-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,var(--veil-top) 0%,transparent 30%,transparent 42%,var(--veil-mid) 54%,var(--veil-low) 63%,var(--bg) 82%)}
+.login-col{flex:1;display:flex;flex-direction:column;width:100%}
+.login-top{display:flex;flex-direction:column;padding:calc(var(--safe-t) + 32px) max(22px,var(--safe-r)) 0 max(22px,var(--safe-l));text-shadow:0 1px 20px var(--veil-mid)}
+.mast-kicker{margin:0;font:500 12px/1.3 var(--font-ui);letter-spacing:.26em;text-transform:uppercase;color:var(--fg-dim)}
+.mast{margin:16px 0 0;display:flex;flex-direction:column}
+.mast-wm{font:350 42px/1 var(--font-display);font-variation-settings:"opsz" 144,"SOFT" 0,"WONK" 0;letter-spacing:.22em;text-transform:uppercase;color:var(--fg)}
+.mast-prog{margin:4px 0 0 36px;font:italic 300 66px/1.05 var(--font-display);font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;letter-spacing:-.01em;color:var(--gold)}
+.mast-by{margin:12px 0 0 39px;font:500 12px/1.3 var(--font-ui);letter-spacing:.32em;text-transform:uppercase;color:var(--fg)}
+.login{margin-top:auto;display:flex;flex-direction:column;gap:16px;padding:28px max(20px,var(--safe-r)) calc(24px + var(--safe-b)) max(20px,var(--safe-l))}
+.login form{display:flex;flex-direction:column;gap:14px}
+.pass{position:relative}
+.pass .inp{padding-right:56px}
+.pass .icon-btn{position:absolute;right:0;top:0;color:var(--fg-dim)}
+.login-foot{margin:4px 0 0;font-size:13px;color:var(--fg-mute)}
+@media (min-width:821px){
+  .login-photo img{object-position:60% 45%}
+  .login-photo::after{background:linear-gradient(to right,var(--bg) 0%,var(--veil-low) 24%,var(--veil-mid) 40%,transparent 62%),linear-gradient(to bottom,var(--veil-top) 0%,transparent 26%)}
+  .login-col{max-width:520px;justify-content:center;gap:40px;padding:48px 0 48px max(56px,5vw)}
+  .login-top{padding:0}
+  .mast-wm{font-size:54px}
+  .mast-prog{font-size:84px}
+  .login{margin-top:0;padding:0}
+}
