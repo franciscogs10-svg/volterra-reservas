@@ -344,3 +344,9 @@ describe('protocolo', () => {
   });
 });
 
+describe('hoja impresa', () => {
+  it('sello de impresión con fecha y hora de Maracaibo', () => {
+    expect(ui.printStamp(new Date('2026-10-18T01:41:00Z'))).toBe('17/10/2026, 9:41 p. m.');
+  });
+});
+

@@ -8,7 +8,7 @@ import type { AppRole } from '@/lib/types';
 import { FIXTURE } from './fixture';
 
 /** Panel con datos de ejemplo y acciones que solo avisan: nada toca Supabase. */
-export function Preview({ pantalla, rol }: { pantalla: 'entrar' | 'panel'; rol: AppRole }) {
+export function Preview({ pantalla, rol, largo = false }: { pantalla: 'entrar' | 'panel'; rol: AppRole; largo?: boolean }) {
   const [msg, setMsg] = useState<Msg | null>(null);
   const dismiss = useCallback(() => setMsg(null), []);
   if (pantalla === 'entrar') return <Login />;
@@ -30,7 +30,7 @@ export function Preview({ pantalla, rol }: { pantalla: 'entrar' | 'panel'; rol: 
 
   return (
     <Board
-      snap={{ ...FIXTURE, role: rol }}
+      snap={{ ...FIXTURE, role: rol, reservations: largo ? [0, 1, 2, 3].flatMap((copy) => FIXTURE.reservations.map((reservation) => ({ ...reservation, id: `${reservation.id}-${copy}`, code: copy ? `${reservation.code.slice(0, 5)}${copy}` : reservation.code }))) : FIXTURE.reservations }}
       email="vista-previa@morefest.local"
       live
       busy={false}

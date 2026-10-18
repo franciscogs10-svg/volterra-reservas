@@ -93,3 +93,8 @@ export function arrivalTime(iso: string): string {
     .format(new Date(iso))
     .replace(/\s/g, ' ');
 }
+
+export function printStamp(now: Date): string {
+  const day = new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: TZ }).format(now);
+  return `${day}, ${arrivalTime(now.toISOString())}`;
+}

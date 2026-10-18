@@ -409,7 +409,6 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
 .pay.is-rev .pay-a{text-decoration:line-through;color:var(--fg-mute)}
 .pays .subform{margin:6px 0 10px}
 .subform.danger{border:1px solid var(--err)}
-```
 
 /* ---------- la puerta no ve montos: el resumen queda en tres cifras ---------- */
 @media (min-width:821px){.stats.few{grid-template-columns:repeat(3,minmax(0,1fr))}}
