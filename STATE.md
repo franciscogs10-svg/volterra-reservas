@@ -1,5 +1,15 @@
 # volterra-reservas (MOREFEST) — STATE
 
+**Actualizado:** 2026-10-17 (noche, cierre)
+**Fase:** MOREFEST completo en producción: https://morefest.vercel.app (la dirección vieja volterra-reservas.vercel.app sigue activa). Proyecto de Vercel renombrado a `morefest`. `main@8e08ab0`, deploy Ready, verificado 2026-10-17 22:57: título MOREFEST, cabeceras y CSP, vista previa de desarrollo 404, fotos e ícono 200, variables de Supabase dentro del build, consola sin errores. Migraciones 0001 a 0010 aplicadas (0009 y 0010 las pegó Francisco en el SQL Editor antes del push; no se verificaron por catálogo porque el MCP de Supabase pidió volver a iniciar sesión).
+**Hecho hoy:** identidad MOREFEST con las fotos de Morella, correo del cliente y confirmación por mailto, reverso de pagos (solo admin), cancelar eligiendo devolver o retener el abono, guardas de dinero (tope de abonos, sin pagos a canceladas), lista de protocolo en pantalla e imprimible, sofás VIP frente a la pantalla. 138 pruebas, typecheck y build en verde; security-review sin hallazgos altos ni medios.
+**Pendiente:** apagar "Allow new users to sign up" en Supabase Auth; Francisco aceptó el riesgo de no cambiar la contraseña del admin ni revocar `RESEND_API_KEY`; registrar las reservas de los dos sofás vendidos; verificar 0009 y 0010 por catálogo cuando el MCP se reconecte; monitoreo de errores; probar la impresión desde el iPhone; usuario de prueba para ver pantallas con sesión.
+**Vuelta atrás:** en Vercel promover `volterra-reservas-hbkdgever` (deploy del plano VIP y blindaje, sin el rediseño); las migraciones 0009 y 0010 son compatibles con ese código.
+
+---
+(Histórico anterior, de la tarde del 2026-10-17)
+
+
 **Actualizado:** 2026-10-17 (noche)
 **Fase:** en producción y blindada. https://volterra-reservas.vercel.app, deploy `b0al54lmb` Ready desde `main@9e91621` (verificado 2026-10-17 20:26: HTTP 200, cabeceras de seguridad, plano VIP nuevo, variables de Supabase dentro del build, CSP deja pasar Supabase y bloquea dominios ajenos). Gate `.claude/gates/blindaje.json` firmado sobre `f5be546`.
 **Cliente:** Corporación Montiel. Admin: Alejandro Hernández, tío de Valentina Hernández (esposa de Francisco) (corporacionmontiel@gmail.com). El evento es **MOREFEST**, festival de Morella Montiel (cantante, esposa de Alejandro) en el restaurante VOLTERRA, Maracaibo, programa "Renacer": 15 artistas invitados y patrocinadores. La app pasa a llamarse MOREFEST; Volterra es el lugar. Página canónica: `C:\Dev\fbrain\projects\volterra-reservas.md`.
