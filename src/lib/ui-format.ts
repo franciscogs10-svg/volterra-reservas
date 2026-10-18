@@ -60,3 +60,23 @@ export function payLabels(payments: { kind: 'payment' | 'reversal' }[]): string[
   let n = 0;
   return payments.map((p) => (p.kind === 'reversal' ? 'Reverso' : `Abono ${++n}`));
 }
+
+/** Minúsculas y sin acentos, para buscar "maria" y encontrar "María". */
+export function norm(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+/** Búsqueda de las listas: el texto sin acentos en cualquier campo, o desde 3 dígitos dentro de un teléfono. */
+export function matchesQuery(fields: (string | null | undefined)[], q: string): boolean {
+  const query = norm(q.trim());
+  if (!query) return true;
+  if (norm(fields.filter(Boolean).join(' ')).includes(query)) return true;
+  const digits = query.replace(/\D/g, '');
+  return digits.length >= 3 && fields.some((f) => (f ?? '').replace(/\D/g, '').includes(digits));
+}
+
+/** Nombre del CSV con la fecha local del equipo: en Maracaibo, después de las 8 p. m. la fecha UTC ya es mañana. */
+export function csvFileName(now: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `morefest-reservas-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}.csv`;
+}

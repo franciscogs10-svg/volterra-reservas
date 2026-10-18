@@ -134,3 +134,24 @@ describe('hoja de la mesa', () => {
     expect(ui.payLabels([{ kind: 'payment' }, { kind: 'reversal' }, { kind: 'payment' }])).toEqual(['Abono 1', 'Reverso', 'Abono 2']);
   });
 });
+
+describe('lista de reservas', () => {
+  const campos = ['PB-05', 'A3F91C', 'María Fernanda Urdaneta', '+58 414 612 3348'];
+  it('busca sin acentos ni mayúsculas en mesa, código, nombre y teléfono', () => {
+    expect(ui.matchesQuery(campos, 'maria')).toBe(true);
+    expect(ui.matchesQuery(campos, 'URDANETA')).toBe(true);
+    expect(ui.matchesQuery(campos, 'a3f9')).toBe(true);
+    expect(ui.matchesQuery(campos, 'pb-05')).toBe(true);
+    expect(ui.matchesQuery(campos, 'zzz')).toBe(false);
+  });
+  it('encuentra el teléfono aunque se escriba sin espacios', () => {
+    expect(ui.matchesQuery(campos, '4146123')).toBe(true);
+  });
+  it('búsqueda vacía muestra todo', () => {
+    expect(ui.matchesQuery(campos, '   ')).toBe(true);
+  });
+  it('el CSV se nombra con la fecha local, no la UTC', () => {
+    expect(ui.csvFileName(new Date(2026, 9, 17, 22, 30))).toBe('morefest-reservas-2026-10-17.csv');
+    expect(ui.csvFileName(new Date(2026, 0, 5, 9, 0))).toBe('morefest-reservas-2026-01-05.csv');
+  });
+});

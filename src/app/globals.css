@@ -306,3 +306,36 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
   .sheet-empty{display:flex;flex-direction:column;gap:8px;padding:20px}
   .toast{left:auto;right:24px;bottom:24px;max-width:420px}
 }
+
+/* ---------- reservas: tarjetas por debajo de 821 px, tabla desde 821 px ---------- */
+.r-tools{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:14px 16px 0}
+.r-count{margin:12px 16px 6px;font-size:14px;color:var(--fg-mute)}
+.rlist{list-style:none;margin:0;padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
+.rrow{width:100%;display:grid;grid-template-columns:62px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:72px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--hair);text-align:left;cursor:pointer;color:var(--fg)}
+.rrow:hover{border-color:var(--line-strong)}
+.rr-mesa{font:600 15px var(--font-mono)}
+.rr-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rr-main b{font-weight:600;font-size:15px;line-height:1.25}
+.rr-main span{font-size:13px;color:var(--fg-mute)}
+.rr-main code{font:500 13px var(--font-mono);color:var(--fg-dim)}
+.rr-side{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.rr-bal{font:500 13px var(--font-mono);color:var(--fg-dim);font-variant-numeric:tabular-nums}
+.rr-bal.due{color:var(--gold)}
+.rtable-wrap{display:none}
+@media (min-width:821px){
+  .r-tools{padding-inline:0}
+  .r-count{margin-inline:0}
+  .rlist{display:none}
+  .rtable-wrap{display:block;overflow-x:auto;margin-top:4px;border:1px solid var(--hair);border-radius:var(--r-card);background:var(--surface)}
+  .rtable{width:100%;border-collapse:collapse;font-size:14px}
+  .rtable th{padding:10px 12px;text-align:left;font:500 12px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-mute);border-bottom:1px solid var(--hair);white-space:nowrap}
+  .rtable td{padding:6px 12px;border-bottom:1px solid var(--hair);white-space:nowrap}
+  .rtable td.wrap{white-space:normal;min-width:140px}
+  .rtable tbody tr:last-child td{border-bottom:0}
+  .rtable tbody tr{cursor:pointer}
+  .rtable tbody tr:hover td{background:var(--surface-2)}
+  .rtable .n{text-align:right;font-variant-numeric:tabular-nums}
+  .rtable .due{color:var(--gold)}
+  .rtable code{font:500 13px var(--font-mono);color:var(--fg-dim)}
+  .linkish{min-height:44px;padding:0;border:0;background:none;color:var(--fg);font:600 14px var(--font-mono);cursor:pointer;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
+}
