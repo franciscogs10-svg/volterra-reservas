@@ -65,21 +65,42 @@ export function Main({ email }: { email: string }) {
 
   const sb = supabase;
   const actions: Actions = {
-    reserve: (t, v) =>
-      run(
-        () =>
-          sb().rpc('create_reservation', {
-            p_table_id: t.id,
-            p_customer_name: v.name,
-            p_phone: v.phone || null,
-            p_guests: v.guests,
-            p_total: v.total,
-            p_deposit: v.deposit,
-            p_method: v.method,
-            p_notes: null,
-          }),
-        `${v.guests} ${v.guests === 1 ? 'puesto reservado' : 'puestos reservados'} para ${v.name}.`,
-      ),
+    reserve: async (t, v) => {
+      setBusy(true);
+      const created = await sb().rpc('create_reservation', {
+        p_table_id: t.id,
+        p_customer_name: v.name,
+        p_phone: v.phone || null,
+        p_guests: v.guests,
+        p_total: v.total,
+        p_deposit: v.deposit,
+        p_method: v.method,
+        p_notes: null,
+      });
+      if (created.error) {
+        setBusy(false);
+        setMsg({ text: friendlyError(created.error.message), err: true });
+        return false;
+      }
+      // create_reservation devuelve el uuid de la reserva; el correo va aparte para no cambiarle la firma (spec, sección 7).
+      let emailFail = '';
+      if (v.email) {
+        const saved = await sb().rpc('set_customer_email', { p_res: created.data as string, p_email: v.email });
+        if (saved.error) emailFail = friendlyError(saved.error.message);
+      }
+      setBusy(false);
+      // La reserva ya existe aunque el correo falle: se devuelve true para que el formulario no se pueda reenviar
+      // (un segundo envío duplicaría la reserva y su anticipo). El correo se guarda después desde la hoja.
+      setMsg(
+        emailFail
+          ? { text: `La reserva quedó creada, pero el correo no se guardó: ${emailFail} Agrégalo desde la hoja de la mesa.`, err: true }
+          : { text: `${v.guests} ${v.guests === 1 ? 'puesto reservado' : 'puestos reservados'} para ${v.name}.`, err: false },
+      );
+      await reload();
+      return true;
+    },
+    setEmail: (r, email) =>
+      run(() => sb().rpc('set_customer_email', { p_res: r.id, p_email: email }), email ? `Correo de ${r.name} guardado.` : `Correo de ${r.name} borrado.`),
     pay: (r: Reservation, amount, method) =>
       run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de ${formatMoney(amount)} registrado.`),
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),

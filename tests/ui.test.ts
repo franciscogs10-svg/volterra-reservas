@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as load from '../src/lib/ui-load';
 import * as ui from '../src/lib/ui-format';
 import * as map from '../src/lib/ui-map';
+import * as mail from '../src/lib/ui-mail';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
 import { summarize } from '../src/lib/logic';
 
@@ -171,5 +172,19 @@ describe('cobrado con lo retenido', () => {
     const con = summarize(FIXTURE.tables, FIXTURE.reservations, FIXTURE.retained);
     expect(con.collected).toBe(sin.collected + 150);
     expect(con.pending).toBe(sin.pending);
+  });
+});
+
+describe('correo del cliente', () => {
+  it('vacío no es error: el correo es opcional', () => {
+    expect(mail.emailError('')).toBe('');
+    expect(mail.emailError('   ')).toBe('');
+  });
+  it('acepta un correo bien escrito, aunque traiga espacios alrededor', () => {
+    expect(mail.emailError(' mafer.urdaneta@ejemplo.com ')).toBe('');
+  });
+  it('rechaza un correo sin dominio con un mensaje que dice cómo arreglarlo', () => {
+    expect(mail.emailError('mafer@ejemplo')).toBe('Revisa el correo: debe verse como nombre@correo.com.');
+    expect(mail.emailError('mafer urdaneta@ejemplo.com')).toBe('Revisa el correo: debe verse como nombre@correo.com.');
   });
 });

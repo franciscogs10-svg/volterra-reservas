@@ -5,6 +5,7 @@ import { balance, formatMoney, paid, resStatus } from '@/lib/logic';
 import type { Reservation } from '@/lib/types';
 import { METHODS, RES_LABEL, arrivalTime, payLabels, plural } from '@/lib/ui-format';
 import type { Actions } from './actions';
+import { EmailRow } from './EmailRow';
 import { Icon } from './Icon';
 import { StatusPill } from './StatusPill';
 
@@ -49,6 +50,8 @@ export function ReservationCard({ r, busy, actions }: Props) {
           <code className="res-code">{r.code}</code>
         </div>
       </header>
+
+      <EmailRow r={r} busy={busy} onSave={actions.setEmail} />
 
       <dl className="res-money">
         <div>

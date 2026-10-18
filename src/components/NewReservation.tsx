@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { TableRow } from '@/lib/types';
 import { METHODS, plural } from '@/lib/ui-format';
+import { emailError } from '@/lib/ui-mail';
 import type { Actions } from './actions';
 import { Icon } from './Icon';
 
@@ -14,13 +15,14 @@ interface Props {
   onReserve: Actions['reserve'];
 }
 
-/** Nueva reserva: mesa entera o por puestos, con selector de puestos de 48 px. */
+/** Nueva reserva: mesa entera o por puestos, con selector de puestos de 48 px y correo opcional. */
 export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
   const [seats, setSeats] = useState(free);
   const [total, setTotal] = useState(sp ? (sp * free).toFixed(2) : '');
   const [edited, setEdited] = useState(false);
   const [error, setError] = useState('');
   const [nameMissing, setNameMissing] = useState(false);
+  const [emailErr, setEmailErr] = useState('');
 
   function changeSeats(v: number) {
     const n = Math.min(free, Math.max(1, v));
@@ -32,14 +34,22 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const name = String(f.get('name')).trim();
+    const email = String(f.get('email') ?? '').trim();
     const deposit = Number(f.get('deposit')) || 0;
     const t = Number(total) || 0;
     setNameMissing(!name);
     if (!name) return setError('Escribe el nombre del cliente.');
     if (!(seats >= 1) || seats > free) return setError(`Solo quedan ${free} puestos libres.`);
     if (deposit > t) return setError('El anticipo no puede ser mayor al total.');
+    const badEmail = emailError(email);
+    setEmailErr(badEmail);
+    if (badEmail) {
+      setError('');
+      document.getElementById('nr-email')?.focus();
+      return;
+    }
     setError('');
-    await onReserve(table, { name, phone: String(f.get('phone')).trim(), guests: seats, total: t, deposit, method: String(f.get('method')) });
+    await onReserve(table, { name, phone: String(f.get('phone')).trim(), email, guests: seats, total: t, deposit, method: String(f.get('method')) });
   }
 
   return (
@@ -69,6 +79,28 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
         <div className="field">
           <label htmlFor="nr-phone">WhatsApp</label>
           <input className="inp" id="nr-phone" name="phone" type="tel" inputMode="tel" autoComplete="off" placeholder="+58 4xx xxx xxxx" />
+        </div>
+        <div className="field">
+          <label htmlFor="nr-email">Correo (opcional)</label>
+          <input
+            className="inp"
+            id="nr-email"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+            placeholder="Para enviarle la confirmación"
+            aria-invalid={emailErr ? true : undefined}
+            aria-describedby={emailErr ? 'nr-email-err' : undefined}
+            onBlur={(e) => setEmailErr(emailError(e.target.value))}
+            onChange={() => setEmailErr('')}
+          />
+          {emailErr && (
+            <p className="err-msg" id="nr-email-err" role="alert">
+              <Icon name="alert" size="sm" />
+              <span>{emailErr}</span>
+            </p>
+          )}
         </div>
         <div className="nr-seats">
           <span className="lbl-txt" id="nr-seats-l">

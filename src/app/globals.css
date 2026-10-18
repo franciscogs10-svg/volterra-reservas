@@ -339,3 +339,7 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
   .rtable code{font:500 13px var(--font-mono);color:var(--fg-dim)}
   .linkish{min-height:44px;padding:0;border:0;background:none;color:var(--fg);font:600 14px var(--font-mono);cursor:pointer;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
 }
+/* ---------- correo del cliente en la tarjeta ---------- */
+.mail-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;min-height:44px;font-size:14px;color:var(--fg-dim)}
+.mail-row b{color:var(--fg);font-weight:600}
+.mail-row small{overflow-wrap:anywhere}
