@@ -8,7 +8,25 @@ export const LABEL: Record<TableStatus, string> = {
   in: 'Ocupada',
 };
 
-export const money = (n: number) => `$${n.toFixed(2)}`;
+const MONEY = new Intl.NumberFormat('es-VE', { style: 'currency', currency: 'USD' });
+const DIGIT_PARTS = new Set(['integer', 'group', 'decimal', 'fraction']);
+
+/** Monto al estilo venezolano: $1.234,50 y -$80,00. Se arma con las partes de Intl porque, según
+ *  la versión de ICU, el símbolo sale como "USD", "US$" o "$" y con espacios duros (Node 24 da "USD 240,00"). */
+export function formatMoney(n: number): string {
+  const digits = MONEY.formatToParts(Math.abs(n))
+    .filter((p) => DIGIT_PARTS.has(p.type))
+    .map((p) => p.value)
+    .join('');
+  return `${n < 0 && /[1-9]/.test(digits) ? '-' : ''}$${digits}`;
+}
+
+/** Nombre viejo: los componentes actuales lo importan. Cuando el plan B los pase a formatMoney, se borra. */
+export const money = formatMoney;
+
+/** Misma regla que la restricción customers_email_format (0009), sobre el texto sin espacios a los lados. */
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/i;
+export const isValidEmail = (s: string) => EMAIL.test(s.trim());
 
 export function fmtDate(d: string | null) {
   if (!d) return 'fecha por definir';

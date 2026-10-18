@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { balance, friendlyError, resStatus, seatPrice, summarize, tableStatus, toCsv } from '../src/lib/logic';
+import {
+  balance, formatMoney, friendlyError, isValidEmail, money, resStatus, seatPrice, summarize, tableStatus, toCsv,
+} from '../src/lib/logic';
 import type { Payment, Reservation, TableRow } from '../src/lib/types';
 
 const table = (over: Partial<TableRow> = {}): TableRow => ({
@@ -84,5 +86,27 @@ describe('resumen y CSV', () => {
 describe('errores', () => {
   it('traduce el error de capacidad', () => {
     expect(friendlyError('mesa sin puestos suficientes (3 libres)')).toMatch(/Ya no quedan puestos/);
+  });
+});
+
+describe('montos y correo', () => {
+  it('formatea montos al estilo venezolano', () => {
+    expect(formatMoney(240)).toBe('$240,00');
+    expect(formatMoney(1234.5)).toBe('$1.234,50');
+    expect(formatMoney(0)).toBe('$0,00');
+    expect(formatMoney(-80)).toBe('-$80,00');
+    expect(formatMoney(-0.001)).toBe('$0,00');
+    expect(formatMoney(0.1 + 0.2)).toBe('$0,30');
+  });
+  it('money da el mismo formato, para los componentes que todavía lo importan', () => {
+    expect(money(1234.5)).toBe('$1.234,50');
+  });
+  it('valida el correo con la misma regla que la base', () => {
+    expect(isValidEmail('mafer.urdaneta@ejemplo.com')).toBe(true);
+    expect(isValidEmail('  Mafer@Ejemplo.COM ')).toBe(true);
+    expect(isValidEmail('mafer@ejemplo')).toBe(false);
+    expect(isValidEmail('mafer urdaneta@ejemplo.com')).toBe(false);
+    expect(isValidEmail('a@@b.co')).toBe(false);
+    expect(isValidEmail('')).toBe(false);
   });
 });
