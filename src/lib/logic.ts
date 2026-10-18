@@ -63,17 +63,21 @@ export function seatPrice(t: TableRow): number | null {
   return null;
 }
 
-export function summarize(tables: TableRow[], all: Reservation[]) {
+/** `retained`: neto de los abonos retenidos de reservas canceladas (snapshot.retained). Suma a lo cobrado,
+ *  pero no a lo pendiente: esas reservas ya no deben nada. */
+export function summarize(tables: TableRow[], all: Reservation[], retained = 0) {
   const totalSeats = tables.reduce((s, t) => s + t.capacity, 0);
   const sold = all.reduce((s, r) => s + r.total_price, 0);
-  const collected = all.reduce((s, r) => s + paid(r), 0);
+  const active = all.reduce((s, r) => s + paid(r), 0);
+  const collected = active + retained;
   const seats = all.reduce((s, r) => s + r.guests, 0);
   const inside = all.reduce((s, r) => s + (r.checked_in ?? 0), 0);
   const untouched = tables.filter((t) => !forTable(t.id, all).length).length;
   return {
     sold,
     collected,
-    pending: sold - collected,
+    pending: sold - active,
+    retained,
     seatsFree: totalSeats - seats,
     totalSeats,
     untouched,
@@ -115,6 +119,13 @@ export function friendlyError(message: string): string {
   if (/forbidden/.test(message)) return 'Tu sesión no tiene permiso para esta acción. Vuelve a entrar.';
   if (/excede los puestos/.test(message)) return 'No pueden entrar más personas que los puestos de la reserva.';
   if (/customers_email_format/.test(message)) return 'El correo no tiene un formato válido. Revisa que tenga @ y un dominio.';
+  if (/la cancelación exige motivo/.test(message)) return 'Escribe el motivo de la cancelación.';
+  if (/el abono supera el saldo/.test(message)) return 'El abono es mayor que el saldo de la reserva. Revisa el monto.';
+  if (/reserva ya cancelada/.test(message)) return 'Esa reserva ya estaba cancelada.';
+  if (/reserva cancelada/.test(message)) return 'Esa reserva está cancelada y ya no recibe abonos.';
+  if (/monto inválido/.test(message)) return 'El monto debe ser mayor que cero.';
+  if (/falta el método de pago/.test(message)) return 'Elige el método de pago.';
+  if (/falta el nombre/.test(message)) return 'Escribe el nombre del cliente.';
   if (/reserva inexistente/.test(message)) return 'Esa reserva ya no existe. Revisa el mapa.';
   if (/pago inexistente/.test(message)) return 'Ese pago ya no existe. Revisa la reserva.';
   if (/ya revertido/.test(message)) return 'Ese pago ya estaba revertido.';

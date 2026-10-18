@@ -66,6 +66,13 @@ describe('resumen y CSV', () => {
       sold: 100, collected: 60, pending: 40, seatsFree: 10, totalSeats: 14, untouched: 1, inside: 4,
     });
   });
+  it('lo retenido de reservas canceladas suma a lo cobrado, pero no cambia lo pendiente', () => {
+    expect(summarize(tables, all, 50)).toMatchObject({ sold: 100, collected: 110, pending: 40, retained: 50 });
+    expect(summarize(tables, all)).toMatchObject({ collected: 60, pending: 40, retained: 0 });
+  });
+  it('el CSV solo lista las reservas activas que recibe, sin filas de lo retenido', () => {
+    expect(toCsv(tables, all).split('\n')).toHaveLength(2);
+  });
   it('exporta CSV con comillas escapadas', () => {
     const csv = toCsv(tables, [res({ name: 'Ana "la jefa"' })]);
     expect(csv.split('\n')[1]).toContain('"Ana ""la jefa"""');
@@ -100,6 +107,15 @@ describe('errores', () => {
     expect(friendlyError('pago inexistente')).toBe('Ese pago ya no existe. Revisa la reserva.');
     expect(friendlyError('pago ya revertido')).toBe('Ese pago ya estaba revertido.');
     expect(friendlyError('el reverso exige motivo')).toBe('Escribe el motivo del reverso.');
+  });
+  it('traduce los errores de dinero y cancelación de la 0010', () => {
+    expect(friendlyError('el abono supera el saldo')).toBe('El abono es mayor que el saldo de la reserva. Revisa el monto.');
+    expect(friendlyError('reserva cancelada')).toBe('Esa reserva está cancelada y ya no recibe abonos.');
+    expect(friendlyError('monto inválido')).toBe('El monto debe ser mayor que cero.');
+    expect(friendlyError('falta el método de pago')).toBe('Elige el método de pago.');
+    expect(friendlyError('la cancelación exige motivo')).toBe('Escribe el motivo de la cancelación.');
+    expect(friendlyError('reserva ya cancelada')).toBe('Esa reserva ya estaba cancelada.');
+    expect(friendlyError('falta el nombre')).toBe('Escribe el nombre del cliente.');
   });
 });
 

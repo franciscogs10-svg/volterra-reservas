@@ -7,6 +7,8 @@ export interface Snapshot {
   reservations: Reservation[];
   /** Rol de quien mira (current_role_name). Null si su perfil no está activo. La puerta no ve pagos (RLS). */
   role: AppRole | null;
+  /** Neto de los pagos de reservas canceladas con abono retenido: sigue contando en lo cobrado. 0 si el rol no ve pagos. */
+  retained: number;
 }
 
 type Num = number | string | null;
@@ -19,7 +21,7 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
   if (!ev.data) throw new Error('No hay un evento cargado. Aplica supabase/migrations/0002_seed.sql.');
   const event = ev.data as EventRow;
 
-  const [tb, rs, rl] = await Promise.all([
+  const [tb, rs, rl, rt] = await Promise.all([
     sb
       .from('tables')
       .select('id,code,capacity,price,seat_price,map_x,map_y,map_w,map_h,map_rot,shape,areas(code)')
@@ -36,10 +38,12 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
       .neq('status', 'cancelled')
       .order('created_at'),
     sb.rpc('current_role_name'),
+    sb.from('payments').select('amount,reservations!inner(status)').eq('reservations.status', 'cancelled'),
   ]);
   if (tb.error) throw tb.error;
   if (rs.error) throw rs.error;
   if (rl.error) throw rl.error;
+  if (rt.error) throw rt.error;
 
   const tables: TableRow[] = (tb.data ?? []).map((t: any) => ({
     id: t.id,
@@ -86,5 +90,7 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
     };
   });
 
-  return { event, tables, reservations, role: (rl.data as AppRole | null) ?? null };
+  const retained = ((rt.data ?? []) as { amount: number | string }[]).reduce((s, p) => s + Number(p.amount), 0);
+
+  return { event, tables, reservations, role: (rl.data as AppRole | null) ?? null, retained };
 }

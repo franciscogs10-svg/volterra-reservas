@@ -13,7 +13,10 @@ function fakeSupabase(rows: Record<string, unknown>, role: string | null) {
         asked[table] = cols;
         return q;
       },
-      eq: () => q,
+      eq: (col: string, val: unknown) => {
+        filters.push(`${table}.${col} = ${val}`);
+        return q;
+      },
       neq: (col: string, val: string) => {
         filters.push(`${table}.${col} <> ${val}`);
         return q;
@@ -78,6 +81,24 @@ describe('snapshot', () => {
     const { sb } = fakeSupabase({ ...rows, reservations: [shuffled] }, 'admin');
     const s = await loadSnapshot(sb);
     expect(s.reservations[0].payments.map((p) => p.id)).toEqual(['p1', 'p2']);
+  });
+
+  it('retained suma el neto de los pagos de las reservas canceladas', async () => {
+    const cancelled = [
+      { amount: '70.00', reservations: { status: 'cancelled' } },
+      { amount: '30.00', reservations: { status: 'cancelled' } },
+      { amount: '-20.00', reservations: { status: 'cancelled' } },
+    ];
+    const { sb, asked, filters } = fakeSupabase({ ...rows, payments: cancelled }, 'admin');
+    const s = await loadSnapshot(sb);
+    expect(s.retained).toBe(80);
+    expect(asked.payments).toBe('amount,reservations!inner(status)');
+    expect(filters).toContain('payments.reservations.status = cancelled');
+  });
+
+  it('retained es 0 si no hay pagos visibles (la puerta no los ve) o no hay canceladas', async () => {
+    expect((await loadSnapshot(fakeSupabase({ ...rows, payments: [] }, 'door').sb)).retained).toBe(0);
+    expect((await loadSnapshot(fakeSupabase(rows, 'door').sb)).retained).toBe(0);
   });
 
   it('sin perfil activo el rol es null; sin correo ni llegada quedan en null', async () => {
