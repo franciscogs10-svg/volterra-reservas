@@ -4,6 +4,7 @@ import * as ui from '../src/lib/ui-format';
 import * as map from '../src/lib/ui-map';
 import * as mail from '../src/lib/ui-mail';
 import * as pay from '../src/lib/ui-payments';
+import * as proto from '../src/lib/ui-protocol';
 import * as cancel from '../src/lib/ui-cancel';
 import type { Payment, Reservation } from '../src/lib/types';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
@@ -320,3 +321,26 @@ describe('mensaje de cancelar sin abono', () => {
     expect(cancel.cancelMessage('retain', 0)).toBe('Reserva cancelada. Los puestos quedaron libres.');
   });
 });
+describe('protocolo', () => {
+  it('agrupa por planta, planta baja primero, sin reordenar dentro del grupo', () => {
+    const groups = proto.groupByArea([
+      { area: 'VIP' as const, n: 1 },
+      { area: 'PB' as const, n: 2 },
+      { area: 'PB' as const, n: 3 },
+    ]);
+    expect(groups.map((group) => [group.label, group.rows.map((row) => row.n)])).toEqual([
+      ['Planta baja', [2, 3]],
+      ['Planta alta VIP', [1]],
+    ]);
+  });
+  it('omite las plantas sin reservas', () => {
+    expect(proto.groupByArea([{ area: 'PB' as const }]).map((group) => group.area)).toEqual(['PB']);
+  });
+  it('saldo: raya si el rol no ve pagos, Pagado o el monto', () => {
+    expect(proto.saldoText(null)).toBe('—');
+    expect(proto.saldoText(0)).toBe('Pagado');
+    expect(proto.saldoText(-5)).toBe('Pagado');
+    expect(proto.saldoText(120)).toBe('$120,00');
+  });
+});
+

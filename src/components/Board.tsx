@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { Snapshot } from '@/lib/data';
 import type { AreaCode, TableRow } from '@/lib/types';
 import { placeName } from '@/lib/ui-format';
@@ -8,15 +9,18 @@ import type { Actions, Msg } from './actions';
 import { Icon, type IconName } from './Icon';
 import { MapView } from './MapView';
 import { Panel } from './Panel';
+import { PrintSheet } from './PrintSheet';
+import { ProtocolView } from './ProtocolView';
 import { ReservationList } from './ReservationList';
 import { Toast } from './Toast';
 import { useIsMobile } from './useMedia';
 
-export type View = 'mapa' | 'reservas';
+export type View = 'mapa' | 'reservas' | 'protocolo';
 
 const VIEWS: [View, string, IconName][] = [
   ['mapa', 'Mapa', 'map'],
   ['reservas', 'Reservas', 'list'],
+  ['protocolo', 'Protocolo', 'clip'],
 ];
 
 export interface BoardProps {
@@ -38,9 +42,22 @@ export function Board({ snap, email, live, stale, busy, msg, actions, onSaveDate
   const [view, setView] = useState<View>('mapa');
   const [area, setArea] = useState<AreaCode>('PB');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [printedAt, setPrintedAt] = useState<Date | null>(null);
   const mobile = useIsMobile();
   const selected = snap.tables.find((t) => t.id === selectedId) ?? null;
   const close = useCallback(() => setSelectedId(null), []);
+
+  useEffect(() => {
+    setPrintedAt(new Date());
+    const beforePrint = () => flushSync(() => setPrintedAt(new Date()));
+    window.addEventListener('beforeprint', beforePrint);
+    return () => window.removeEventListener('beforeprint', beforePrint);
+  }, []);
+
+  function print() {
+    flushSync(() => setPrintedAt(new Date()));
+    window.print();
+  }
 
   function pick(t: TableRow) {
     setArea(t.area);
@@ -88,10 +105,12 @@ export function Board({ snap, email, live, stale, busy, msg, actions, onSaveDate
             <MapView snap={snap} area={area} onArea={changeArea} selectedId={selectedId} onPick={pick} onSaveDate={onSaveDate} />
           )}
           {view === 'reservas' && <ReservationList tables={snap.tables} reservations={snap.reservations} onPick={pick} />}
+          {view === 'protocolo' && <ProtocolView tables={snap.tables} reservations={snap.reservations} event={snap.event} role={snap.role} onPick={pick} onPrint={print} />}
         </main>
         <Panel table={selected} event={snap.event} role={snap.role} reservations={snap.reservations} actions={actions} busy={busy} modal={mobile} onClose={close} />
       </div>
       <Toast msg={msg} onDone={onDismissMsg} />
+      <PrintSheet event={snap.event} tables={snap.tables} reservations={snap.reservations} role={snap.role} printedAt={printedAt} />
     </div>
   );
 }
