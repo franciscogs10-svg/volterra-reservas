@@ -320,4 +320,15 @@ describe('MOREFEST (0009)', () => {
       db.query('select set_customer_email($1, $2)', ['00000000-0000-0000-0000-000000000000', 'a@b.co']),
     ).rejects.toThrow(/reserva inexistente/);
   });
+
+  it('cambiar el correo deja rastro en la auditoría, con quién lo hizo', async () => {
+    const c = (await one<{ id: string }>('select customer_id as id from reservations where id = $1', [res])).id;
+    await as(seller);
+    await db.query('select set_customer_email($1, $2)', [res, 'rastro@cliente.com']);
+    await as(admin);
+    const log = await one<{ old_email: string; new_email: string; user_id: string }>(
+      `select old_data->>'email' as old_email, new_data->>'email' as new_email, user_id from audit_logs
+       where table_name = 'customers' and row_id = $1 and action = 'UPDATE' order by id desc limit 1`, [c]);
+    expect(log).toEqual({ old_email: 'api@cliente.com', new_email: 'rastro@cliente.com', user_id: seller });
+  });
 });

@@ -8,6 +8,10 @@ update events set name = 'MOREFEST', venue = 'Restaurante VOLTERRA, Maracaibo';
 alter table customers add column email text
   constraint customers_email_format check (email is null or email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
+-- Auditoría: un cambio de correo o teléfono deja rastro, como las demás tablas (0001).
+create trigger audit_customers after insert or update or delete on customers
+  for each row execute function audit();
+
 -- 3. Guardar o borrar el correo del cliente de una reserva. No se toca create_reservation:
 --    cambiarle la firma crearía una sobrecarga ambigua en PostgREST. La interfaz llama
 --    create_reservation y luego set_customer_email si hay correo.
