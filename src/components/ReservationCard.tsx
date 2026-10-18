@@ -6,6 +6,7 @@ import type { AppRole, EventRow, Reservation, TableRow } from '@/lib/types';
 import { METHODS, RES_LABEL, arrivalTime, plural } from '@/lib/ui-format';
 import { mayReverse, paymentRows, seesPayments } from '@/lib/ui-payments';
 import type { Actions } from './actions';
+import { CancelBox } from './CancelBox';
 import { EmailRow } from './EmailRow';
 import { Icon } from './Icon';
 import { MailBox } from './MailBox';
@@ -24,7 +25,6 @@ interface Props {
 /** Una reserva dentro de la hoja: correo, montos y movimientos (si el rol ve pagos), cobro, reverso (admin),
  *  confirmación por correo, llegada y cancelación. */
 export function ReservationCard({ r, table, event, role, busy, actions }: Props) {
-  const [confirm, setConfirm] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
   const [revFor, setRevFor] = useState<string | null>(null);
   const [amount, setAmount] = useState(balance(r).toFixed(2));
@@ -164,28 +164,7 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
             Confirmación por correo
           </button>
         )}
-        {role !== 'admin' ? null : confirm ? (
-          <>
-            <button
-              type="button"
-              className="btn btn-danger"
-              disabled={busy}
-              onClick={async () => {
-                await actions.cancel(r);
-                setConfirm(false);
-              }}
-            >
-              Sí, liberar puestos
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => setConfirm(false)}>
-              No
-            </button>
-          </>
-        ) : (
-          <button type="button" className="btn btn-quiet-danger" disabled={busy} onClick={() => setConfirm(true)}>
-            Cancelar reserva
-          </button>
-        )}
+        <CancelBox r={r} role={role} busy={busy} onCancel={actions.cancel} />
       </div>
 
       {sees && mailOpen && <MailBox id={mailId} r={r} table={table} event={event} notify={actions.notify} />}

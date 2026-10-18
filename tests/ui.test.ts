@@ -4,7 +4,8 @@ import * as ui from '../src/lib/ui-format';
 import * as map from '../src/lib/ui-map';
 import * as mail from '../src/lib/ui-mail';
 import * as pay from '../src/lib/ui-payments';
-import type { Payment } from '../src/lib/types';
+import * as cancel from '../src/lib/ui-cancel';
+import type { Payment, Reservation } from '../src/lib/types';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
 import { summarize } from '../src/lib/logic';
 
@@ -253,5 +254,69 @@ describe('resumen sin montos para la puerta', () => {
     const s = summarize(FIXTURE.tables, FIXTURE.reservations, FIXTURE.retained);
     expect(ui.statItems(s, 14, true).map((i) => i[0])).toEqual(['Vendido', 'Cobrado', 'Por cobrar', 'Puestos libres', 'Mesas sin tocar', 'Personas dentro']);
     expect(ui.statItems(s, 14, false).map((i) => i[0])).toEqual(['Puestos libres', 'Mesas sin tocar', 'Personas dentro']);
+  });
+});
+
+describe('cancelar con decisión', () => {
+  const abono = (amount: number, id = String(amount)): Payment => ({
+    id, amount, kind: amount < 0 ? 'reversal' : 'payment', method: 'Efectivo',
+    created_at: '2026-10-12T15:00:00Z', reverses_payment_id: null,
+  });
+  const reserva = (over: Partial<Reservation> = {}): Reservation => ({
+    id: 'r1', code: 'AB12CD', table_id: 't1', guests: 4, total_price: 200, notes: null,
+    name: 'Marcela', phone: null, email: null, payments: [], checked_in: null, checked_in_at: null, ...over,
+  });
+
+  it('solo el admin puede cancelar', () => {
+    expect([cancel.mayCancel('admin'), cancel.mayCancel('seller'), cancel.mayCancel('door'), cancel.mayCancel(null)]).toEqual([true, false, false, false]);
+  });
+  it('con llegada confirmada no se ofrece y dice por qué', () => {
+    const p = cancel.cancelPlan(reserva({ payments: [abono(100)], checked_in: 4 }), 'admin');
+    expect(p.offered).toBe(false);
+    expect(p.blocked).toBe('Ya entró: no se puede cancelar.');
+  });
+  it('para quien no es admin no hay nada que ofrecer ni explicar', () => {
+    const p = cancel.cancelPlan(reserva({ payments: [abono(100)] }), 'seller');
+    expect(p).toMatchObject({ offered: false, blocked: '' });
+  });
+  it('con abono neto positivo pregunta devolver o retener y muestra el neto', () => {
+    const p = cancel.cancelPlan(reserva({ payments: [abono(100, 'a'), abono(60, 'b'), abono(-60, 'c')] }), 'admin');
+    expect(p).toMatchObject({ offered: true, asksMode: true, net: 100 });
+  });
+  it('con neto cero no pregunta: solo pide el motivo', () => {
+    expect(cancel.cancelPlan(reserva(), 'admin')).toMatchObject({ offered: true, asksMode: false, net: 0 });
+    expect(cancel.cancelPlan(reserva({ payments: [abono(80, 'a'), abono(-80, 'b')] }), 'admin').asksMode).toBe(false);
+  });
+  it('si hay abono la opción es obligatoria y el motivo también', () => {
+    const plan = cancel.cancelPlan(reserva({ payments: [abono(100)] }), 'admin');
+    expect(cancel.cancelErrors(plan, null, 'Se arrepintió')).toEqual({ mode: 'Elige si devuelves o retienes el abono.', reason: '' });
+    expect(cancel.cancelErrors(plan, 'retain', '   ')).toEqual({ mode: '', reason: 'Escribe el motivo de la cancelación.' });
+    expect(cancel.cancelErrors(plan, 'refund', 'Se arrepintió')).toEqual({ mode: '', reason: '' });
+  });
+  it('sin abono no hay que elegir opción', () => {
+    const plan = cancel.cancelPlan(reserva(), 'admin');
+    expect(cancel.cancelErrors(plan, null, 'Duplicada')).toEqual({ mode: '', reason: '' });
+    expect(cancel.cancelErrors(plan, null, '')).toEqual({ mode: '', reason: 'Escribe el motivo de la cancelación.' });
+  });
+  it('cada modo llama a su función de la base; sin abono basta cancelar', () => {
+    expect(cancel.cancelRpc('refund')).toBe('cancel_and_refund');
+    expect(cancel.cancelRpc('retain')).toBe('cancel_reservation');
+    expect(cancel.cancelRpc(null)).toBe('cancel_reservation');
+  });
+  it('mensaje de confirmación distinto para cada modo', () => {
+    expect(cancel.cancelMessage('refund', 100)).toBe('Reserva cancelada. Se devolvió $100,00.');
+    expect(cancel.cancelMessage('retain', 100)).toBe('Reserva cancelada. El abono de $100,00 quedó retenido.');
+    expect(cancel.cancelMessage(null, 0)).toBe('Reserva cancelada. Los puestos quedaron libres.');
+  });
+  it('los textos de las dos opciones', () => {
+    expect(cancel.MODE_LABEL.refund).toBe('Devolver el abono');
+    expect(cancel.MODE_LABEL.retain).toBe('Retener el abono');
+    expect(cancel.MODE_HELP.retain).toBe('La mesa se libera y el dinero sigue contando en lo cobrado.');
+  });
+});
+
+describe('mensaje de cancelar sin abono', () => {
+  it('aunque se mande retener, sin abono neto no habla de dinero', () => {
+    expect(cancel.cancelMessage('retain', 0)).toBe('Reserva cancelada. Los puestos quedaron libres.');
   });
 });

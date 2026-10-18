@@ -9,7 +9,8 @@ export interface Actions {
   ) => Promise<boolean>;
   pay: (r: Reservation, amount: number, method: string) => Promise<boolean>;
   checkIn: (r: Reservation) => Promise<boolean>;
-  cancel: (r: Reservation) => Promise<boolean>;
+  /** Solo admin, con motivo. 'refund' devuelve el abono (cancel_and_refund); 'retain' lo retiene (cancel_reservation). */
+  cancel: (r: Reservation, mode: 'refund' | 'retain', reason: string) => Promise<boolean>;
   savePrices: (t: TableRow, price: number | null, seat: number | null) => Promise<boolean>;
   /** null borra el correo. */
   /** Aviso flotante sin pasar por la base (copiar al portapapeles, abrir el correo). */

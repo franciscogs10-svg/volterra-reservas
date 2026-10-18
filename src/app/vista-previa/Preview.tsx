@@ -21,7 +21,7 @@ export function Preview({ pantalla, rol }: { pantalla: 'entrar' | 'panel'; rol: 
     reserve: (t, v) => aviso(`reserva de ${v.guests} puestos en ${t.code} para ${v.name}.`),
     pay: (r, amount, method) => aviso(`pago de ${amount} por ${method} para ${r.name}.`),
     checkIn: (r) => aviso(`llegada de ${r.name}.`),
-    cancel: (r) => aviso(`cancelación de ${r.name}.`),
+    cancel: (r, mode, reason) => aviso(`cancelación de ${r.name} (${mode === 'refund' ? 'devolver' : 'retener'} el abono) con motivo "${reason}".`),
     savePrices: (t) => aviso(`precios de ${t.code}.`),
     notify: (text, err = false) => setMsg({ text, err }),
     reverse: (p, reason) => aviso(`reverso de ${p.amount} con motivo "${reason}".`),

@@ -358,3 +358,15 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
 
 /* ---------- la puerta no ve montos: el resumen queda en tres cifras ---------- */
 @media (min-width:821px){.stats.few{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* ---------- cancelar con decisión: devolver o retener el abono ---------- */
+.res-act .cancel-box{flex:1 1 100%}
+.cancel-lead{margin:0;font-size:15px;line-height:1.45;color:var(--fg-dim)}
+.cancel-lead b{color:var(--fg)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;align-items:start;min-height:56px;padding:12px;border-radius:var(--r-ctl);border:1px solid var(--line-strong);background:var(--surface);cursor:pointer}
+.opt.on{border-color:var(--amber);background:var(--surface-2)}
+.opt input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--amber)}
+.opt:has(input:focus-visible){outline:2px dashed var(--fg);outline-offset:2px}
+.opt b{display:block;font-weight:600;color:var(--fg)}
+.opt small{display:block;margin-top:2px;font-size:14px;line-height:1.4;color:var(--fg-mute)}

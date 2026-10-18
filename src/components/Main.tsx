@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { loadSnapshot, type Snapshot } from '@/lib/data';
-import { formatMoney, friendlyError } from '@/lib/logic';
+import { formatMoney, friendlyError, paid } from '@/lib/logic';
+import { cancelMessage, cancelRpc } from '@/lib/ui-cancel';
 import { loadState } from '@/lib/ui-load';
 import type { Reservation, TableRow } from '@/lib/types';
 import type { Actions, Msg } from './actions';
@@ -104,7 +105,12 @@ export function Main({ email }: { email: string }) {
     pay: (r: Reservation, amount, method) =>
       run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de ${formatMoney(amount)} registrado.`),
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),
-    cancel: (r) => run(() => sb().rpc('cancel_reservation', { p_res: r.id, p_reason: 'Cancelada desde la app' }), 'Reserva cancelada. Los puestos quedaron libres.'),
+    cancel: (r, mode, reason) => {
+      // Devolver y retener son dos funciones distintas de la base; sin abono neto solo se cancela.
+      const net = Math.round(paid(r) * 100) / 100;
+      const rpc = cancelRpc(net > 0 ? mode : null);
+      return run(() => sb().rpc(rpc, { p_res: r.id, p_reason: reason.trim() }), cancelMessage(mode, net));
+    },
     notify: (text, err = false) => setMsg({ text, err }),
     reverse: (p, reason) =>
       run(() => sb().rpc('reverse_payment', { p_payment: p.id, p_reason: reason }), 'Reverso registrado. El abono original sigue en el historial.'),
