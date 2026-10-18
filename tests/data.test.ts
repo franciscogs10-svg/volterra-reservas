@@ -73,6 +73,13 @@ describe('snapshot', () => {
     expect(r.checked_in_at).toBe('2026-11-15T00:52:00+00:00');
   });
 
+  it('ordena los pagos de cada reserva por fecha ascendente', async () => {
+    const shuffled = { ...reservation, payments: [...reservation.payments].reverse() };
+    const { sb } = fakeSupabase({ ...rows, reservations: [shuffled] }, 'admin');
+    const s = await loadSnapshot(sb);
+    expect(s.reservations[0].payments.map((p) => p.id)).toEqual(['p1', 'p2']);
+  });
+
   it('sin perfil activo el rol es null; sin correo ni llegada quedan en null', async () => {
     const bare = { ...reservation, customers: { full_name: 'Ana', phone: null }, check_ins: null };
     const { sb } = fakeSupabase({ ...rows, reservations: [bare] }, null);

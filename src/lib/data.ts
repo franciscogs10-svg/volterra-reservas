@@ -69,16 +69,18 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
       name: c?.full_name ?? 'Sin nombre',
       phone: c?.phone ?? null,
       email: c?.email ?? null,
-      payments: (r.payments ?? []).map(
-        (p: any): Payment => ({
-          id: p.id,
-          amount: Number(p.amount),
-          kind: p.kind,
-          method: p.method,
-          created_at: p.created_at,
-          reverses_payment_id: p.reverses_payment_id ?? null,
-        }),
-      ),
+      payments: (r.payments ?? [])
+        .map(
+          (p: any): Payment => ({
+            id: p.id,
+            amount: Number(p.amount),
+            kind: p.kind,
+            method: p.method,
+            created_at: p.created_at,
+            reverses_payment_id: p.reverses_payment_id ?? null,
+          }),
+        )
+        .sort((a: Payment, b: Payment) => Date.parse(a.created_at) - Date.parse(b.created_at)),
       checked_in: ci?.people_in ?? null,
       checked_in_at: ci?.checked_at ?? null,
     };
