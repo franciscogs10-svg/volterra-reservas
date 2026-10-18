@@ -1,22 +1,17 @@
-import { money, summarize } from '@/lib/logic';
+import { summarize } from '@/lib/logic';
 import type { Reservation, TableRow } from '@/lib/types';
+import { statItems } from '@/lib/ui-format';
 
+/** Seis cifras en dorado: 3 x 2 en el celular, una fila en escritorio. */
 export function Stats({ tables, reservations }: { tables: TableRow[]; reservations: Reservation[] }) {
-  const s = summarize(tables, reservations);
-  const items: [string, string][] = [
-    ['Vendido', money(s.sold)],
-    ['Cobrado', money(s.collected)],
-    ['Por cobrar', money(s.pending)],
-    ['Puestos libres', `${s.seatsFree} de ${s.totalSeats}`],
-    ['Mesas sin tocar', `${s.untouched} de ${s.totalTables}`],
-    ['Personas dentro', String(s.inside)],
-  ];
+  const items = statItems(summarize(tables, reservations), reservations.length);
   return (
-    <section className="stats" aria-label="Resumen">
-      {items.map(([label, value]) => (
+    <section className="stats" aria-label="Resumen de ventas">
+      {items.map(([label, value, note]) => (
         <div className="stat" key={label}>
           <span>{label}</span>
           <b>{value}</b>
+          <small>{note}</small>
         </div>
       ))}
     </section>

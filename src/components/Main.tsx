@@ -8,6 +8,8 @@ import { loadState } from '@/lib/ui-load';
 import type { Reservation, TableRow } from '@/lib/types';
 import type { Actions, Msg } from './actions';
 import { Board } from './Board';
+import { Icon } from './Icon';
+import { StateScreen } from './StateScreen';
 
 type Result = PromiseLike<{ error: { message: string } | null }>;
 
@@ -102,17 +104,31 @@ export function Main({ email }: { email: string }) {
   const state = loadState(snap !== null, loadError);
   if (state.screen === 'error') {
     return (
-      <div className="wrap center">
-        <h1>VOLTERRA</h1>
-        <p className="err-banner">{loadError}</p>
-        <div className="actions">
-          <button onClick={reload}>Reintentar</button>
-          <button onClick={() => supabase().auth.signOut()}>Salir</button>
+      <StateScreen>
+        <p className="err-msg" role="alert">
+          <Icon name="alert" size="sm" />
+          <span>{loadError}</span>
+        </p>
+        <div className="row-wrap">
+          <button type="button" className="btn btn-secondary" onClick={reload}>
+            Reintentar
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => supabase().auth.signOut()}>
+            Salir
+          </button>
         </div>
-      </div>
+      </StateScreen>
     );
   }
-  if (!snap) return <div className="wrap center note">Cargando…</div>;
+  if (!snap) {
+    return (
+      <StateScreen>
+        <p className="muted" role="status">
+          Cargando…
+        </p>
+      </StateScreen>
+    );
+  }
 
   return (
     <Board
