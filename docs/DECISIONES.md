@@ -2,6 +2,15 @@
 
 Una entrada por decisión, la más nueva arriba. Fecha absoluta, qué se decidió y por qué. Lo que afecte al imperio se copia a `C:\Dev\fbrain\projects\volterra-reservas.md`.
 
+## 2026-10-17 (noche) — Sin link público: la app es solo para que Alejandro administre
+
+- **No hay venta al público.** Alejandro no quiere link: la gente lo llama o le escribe y él aparta, reserva, asigna y registra. En la puerta trabaja el protocolo con la lista de mesas y reservas. Quedan descartados el checkout público, los comprobantes de pago, el bloqueo de 20 minutos, el QR, el modo puerta y el envío por WhatsApp (todo se diseñó y se descartó en la misma sesión). La planta VIP no se vende al público.
+- **Confirmación por correo, enviada por Alejandro cuando quiera.** Botón "Enviar confirmación" que abre su correo (Gmail de Corporación Montiel) con el estado de cuenta ya escrito: mesa, personas, total, abonos y saldo; más "Copiar mensaje". El envío automático se descartó: Resend exige dominio propio verificado y Corporación Montiel no tiene (verificado por DNS). Requiere el campo de correo del cliente.
+- **Lista de protocolo** en pantalla (marcar llegada con un toque) e imprimible sin teléfonos.
+- **Identidad MOREFEST** sobre la app existente, a partir de las fotos de Morella. La entrada lleva su foto saliendo del agua; nada de atardecer genérico ni íconos de Maracaibo ("se ve ordinario, tiene que ser más chic").
+- **Sofás VIP en fila paralela a la baranda, frente a la pantalla LED** (migración 0007, aprobado por Francisco con el dibujo).
+- Publicación: `fix/blindaje` y `fix/plano-vip-sofas` fusionadas en `main@9e91621` y desplegadas; 0007 y 0008 aplicadas en Supabase con go de Francisco.
+
 ## 2026-10-17 (noche) — Blindaje de lo que está en producción (rama fix/blindaje, migración 0008)
 
 - **Registro abierto = vendedor gratis.** Supabase Auth tenía el registro público abierto (`disable_signup=false`) y `handle_new_user` le daba a todo usuario nuevo un perfil `seller` activo: con eso se leen clientes, teléfonos y pagos, y se registran abonos. Se cierra en dos capas: Francisco apaga el registro en el panel y la 0008 hace que todo usuario después del primero nazca inactivo hasta que el admin lo active (README, "Usuarios del equipo"). Razón: no depender de un interruptor del panel para la seguridad de los datos.

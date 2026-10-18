@@ -1,55 +1,49 @@
 # volterra-reservas (MOREFEST) — STATE
 
-**Actualizado:** 2026-10-17 (tarde)
-**Fase:** en producción (https://volterra-reservas.vercel.app, HTTP 200 verificado 2026-10-17 19:15), desplegada desde la PC antes de blindar. En GitHub, `main` sigue en el commit inicial; el código vive en la rama `feat/app-base`.
-**Cliente:** Corporación Montiel. Admin: Alejandro Hernández, tío de Valentina Hernández (esposa de Francisco) (corporacionmontiel@gmail.com). El evento es **MOREFEST**, festival de Morella Montiel (cantante, esposa de Alejandro) en el restaurante VOLTERRA, Maracaibo, programa "Renacer": 15 artistas invitados y patrocinadores. La app pasa a llamarse MOREFEST; Volterra es el lugar. Página canónica: `C:\Dev\fbrain\projects\volterra-reservas.md`. Handoff de la sesión del 17: `C:\Dev\fbrain\meta\coordinacion\handoff-pc-to-pc-morefest-2026-10-17.md`.
+**Actualizado:** 2026-10-17 (noche)
+**Fase:** en producción y blindada. https://volterra-reservas.vercel.app, deploy `b0al54lmb` Ready desde `main@9e91621` (verificado 2026-10-17 20:26: HTTP 200, cabeceras de seguridad, plano VIP nuevo, variables de Supabase dentro del build, CSP deja pasar Supabase y bloquea dominios ajenos). Gate `.claude/gates/blindaje.json` firmado sobre `f5be546`.
+**Cliente:** Corporación Montiel. Admin: Alejandro Hernández, tío de Valentina Hernández (esposa de Francisco) (corporacionmontiel@gmail.com). El evento es **MOREFEST**, festival de Morella Montiel (cantante, esposa de Alejandro) en el restaurante VOLTERRA, Maracaibo, programa "Renacer": 15 artistas invitados y patrocinadores. La app pasa a llamarse MOREFEST; Volterra es el lugar. Página canónica: `C:\Dev\fbrain\projects\volterra-reservas.md`.
 
 ## Qué es
 
-Venta de mesas, puestos y tickets, y control de acceso, de un evento con dos plantas: planta baja (PB, 15 mesas más la barra PB-16 de 11 banquetas) y planta alta VIP (tres sofás de 4 para patrocinadores, VIP-05/06/07; el resto es zona de artistas sin venta). Roles admin y vendedor. Mapa sobre los croquis reales (`public/plano-pb.jpg`, `public/plano-vip.jpg`). Cada mesa se vende entera o por puestos; abonos inmutables con reverso; llegada confirmada por reserva; resumen y CSV; estado en vivo entre celulares.
+App interna para que Alejandro administre las reservas de un evento con dos plantas. **Nada público:** la gente lo llama o le escribe y él aparta, reserva, asigna y registra. En la puerta trabaja el protocolo con la lista de mesas y reservas. Planta baja (PB, 15 mesas más la barra PB-16 de 11 banquetas) y planta alta VIP (tres sofás de 4 para patrocinadores, VIP-05/06/07, en fila frente a la pantalla LED; el resto es zona de artistas sin venta). Roles admin, vendedor y puerta. Cada mesa se vende entera o por puestos; abonos inmutables con reverso único; llegada confirmada por reserva; resumen y CSV; estado en vivo entre celulares.
 
-## Estado real (2026-10-17)
+## Estado real (2026-10-17, noche)
 
-Rama `feat/app-base`:
+`main@9e91621` (antes estaba en el commit inicial) = `feat/app-base` + rama `fix/blindaje` + rama `fix/plano-vip-sofas`:
 
-- `5d601e0` (2026-10-16, noche): base de la app. Migraciones 0001 (esquema, triggers de capacidad y pagos, roles, auditoría) y 0002 (seed de 22 mesas), mapa sobre el croquis, reservas por puestos, pruebas.
-- `7eb9096` (2026-10-17): migraciones 0003 (endurecimiento de permisos) y 0004 (barra PB-16 y sillones VIP-08 como puestos sueltos), con prueba.
-- `0922b13` (2026-10-17): migración 0005. VIP-01 a VIP-04 y VIP-08 pasan a inactivas (zona de artistas); VIP-05 a VIP-07 se vuelven sofás de 4 puestos. Columna nueva `tables.active`; `create_reservation` rechaza una mesa retirada.
-- `d6b6677` y `39f0a2a` (2026-10-17): metodología del imperio (este archivo, CLAUDE.md, `docs/DECISIONES.md`).
+- `d507d22`: plano VIP sin mesas de artistas, sofás dibujados; migración 0006.
+- `3388726`: sofás en fila paralela a la baranda, espaldar hacia artistas, frente a la pantalla LED (aprobado por Francisco); migración 0007 (96x40, giro 48); `scripts/plano-vip-sofas.py` reproduce la imagen.
+- `3d04ed2`/`03b0685`: migración 0008 de blindaje: usuarios nuevos inactivos hasta que el admin los active, `check_in` solo para reservas confirmadas, un reverso por pago con motivo obligatorio.
+- `b46b515`: el CSV neutraliza fórmulas. `e650ff0`: CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy (`next.config.ts`).
 
-Supabase `nymslckxukoqhifpkrgl`: migraciones 0001 a 0005 aplicadas y registradas. Usuario admin creado con contraseña inicial pasada por chat.
+Supabase `nymslckxukoqhifpkrgl`: migraciones 0001 a 0008 aplicadas (0008 y 0007 aplicadas por MCP el 2026-10-17 con go de Francisco y verificadas). 1 perfil (admin), 0 reservas, 0 pagos.
 
-Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `RESEND_API_KEY` en producción y desarrollo (la key de Resend pasó por chat: rotarla cuando se pueda).
+Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `RESEND_API_KEY` en producción (sensibles: `vercel env pull` las trae vacías; se miden en el bundle desplegado: URL 40, clave 46) y en desarrollo. Las vistas previas de Vercel no tienen variables: una preview no conecta con Supabase.
 
-Ventas: dos sofás VIP vendidos a patrocinadores y uno por vender. Esas reservas todavía no están registradas en la app.
+Ramas: `feat/app-base` quedó atrás de `main` (la usa otra sesión en el checkout principal); el trabajo sigue sobre `main`. Worktrees: `C:\Dev\volterra-reservas-wt-blindaje` (`fix/blindaje`) y `C:\Dev\volterra-reservas-wt-plano` (`fix/plano-vip-sofas`), ambas ya fusionadas.
 
-Plano VIP: `public/plano-vip.jpg` aún muestra el layout viejo. Decidido editarlo por código (PIL 12 disponible en el Python del sistema) sobre la imagen original para conservar el lienzo 792x966 y las coordenadas: tapar las mesas de la zona de artistas y dibujar los tres sofás y mesitas altas y bajas. No se hizo.
+## Verificación (2026-10-17, noche, sobre `f5be546`)
 
-## Verificación (2026-10-17, sobre `0922b13`)
+- `npm test`: PASS, 3 archivos, 35 pruebas. `npm run typecheck`: PASS. `npm run build`: PASS.
+- security-review: sin hallazgos High ni Medium con confianza ≥ 0.8 (probado con los roles de Supabase sobre PGlite).
+- Producción: PASS (ver encabezado). Error de consola conocido: falta `favicon.ico` (se resuelve con el rebautizo).
 
-- `npm test`: PASS. 2 archivos, 22 pruebas, 22 en verde (vitest 5.0.5, 3.9 s).
-- `npm run typecheck`: PASS (tsc sin errores).
-- Producción: PASS. HTTP 200, título "VOLTERRA Reservas".
+## Decisiones de Francisco (2026-10-17, noche)
 
-## Decisiones de Francisco para lo que sigue (2026-10-17, tarde)
-
-1. El link público es **compra de ticket con pago inmediato**. Nada apartado desde el público; solo Alejandro aparta, reserva y asigna.
-2. Los sofás de patrocinadores quedan fuera del link público.
-3. Resend listo (key en Vercel) para los avisos por correo.
-4. Nombre MOREFEST; identidad visual con las imágenes que mandó Morella (Francisco las deja en `docs/brand/`).
+Ver `docs/DECISIONES.md`. Resumen: no hay link público; identidad MOREFEST sobre la app existente (fotos de Morella, nada de atardecer genérico: la entrada lleva la foto de Morella saliendo del agua); Lista de protocolo en pantalla e imprimible; botón "Enviar confirmación" que abre el correo de Alejandro con el estado de cuenta (sin envío automático: Resend exige dominio y no hay); campo de correo del cliente.
 
 ## Próximo paso
 
-1. Sesión nueva con el imperio (pegar el prompt del handoff). Diseño primero: `brainstorming` (abierta; falta decidir **medio de pago inmediato** y **entrega del ticket**), `writing-plans`, `auditar-proyecto`.
-2. Francisco deja las imágenes de Morella en `docs/brand/`.
-3. Francisco, a mano en el panel: desactivar el registro público en Supabase Auth, cambiar la contraseña inicial del admin y, si quiere, agregar `&skip_elicitations=execute_sql%2Capply_migration` a la URL de `.mcp.json`.
-4. `blindar` sobre lo que ya está en producción, fusionar `feat/app-base` en `main` y confirmar en Vercel que el deploy queda Ready. Recién ahí se publica el plano VIP corregido.
-5. Registrar las reservas de los dos sofás vendidos.
-6. Construir identidad MOREFEST y link público de tickets, una tarea a la vez, con pruebas primero.
+1. Francisco, en los paneles: apagar "Allow new users to sign up" en Supabase Auth, cambiar la contraseña del admin, revocar `RESEND_API_KEY` (pasó por chat y ya no se usa).
+2. Francisco deja las fotos de Morella en `docs/brand/` (sigue vacía).
+3. Diseño MOREFEST: prototipo navegable listo en el scratchpad de la sesión (`morefest-prototipo.html`, 8 pantallas); falta cambiar la entrada por la foto de Morella, aprobarlo, cerrar la especificación y el plan (`writing-plans`) e implementar con pruebas: identidad, rebautizo (título, metadatos, favicon, `events.name` por migración 0009), campo de correo del cliente, botón de confirmación, Lista de protocolo, botón de reverso en la interfaz.
+4. Alejandro registra las reservas de los dos sofás vendidos.
+5. Pendientes menores del blindaje: monitoreo de errores (decidir), protección de contraseñas filtradas en Supabase, `.mcp.json` con `read_only=true` por defecto.
 
 ## Vuelta atrás
 
-- Código: `git revert` del commit; en Vercel, promover el deploy anterior.
+- Producción: en Vercel, promover el deploy anterior (`volterra-reservas-qyxldg4e4`, del 2026-10-17 18:36); en git, `git revert` sobre `main`.
+- La 0008 no se deshace a mano: se escribe la siguiente migración. La 0007 se revierte con una migración que vuelva a 120x44 y giro -42 (y la imagen de `d507d22`).
 - Una mesa retirada se reactiva con `update tables set active = true where code = '...'`.
-- Pagos: nunca se borran; un error se corrige con `reverse_payment`.
-- Migraciones: no se deshacen a mano; se escribe la siguiente que revierta el cambio.
+- Pagos: nunca se borran; un error se corrige con `reverse_payment` (una vez por pago, con motivo).
