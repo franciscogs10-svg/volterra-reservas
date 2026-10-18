@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { balance, formatMoney, paid, resStatus } from '@/lib/logic';
 import type { AppRole, EventRow, Reservation, TableRow } from '@/lib/types';
-import { METHODS, RES_LABEL, arrivalTime, payLabels, plural } from '@/lib/ui-format';
-import { seesPayments } from '@/lib/ui-payments';
+import { METHODS, RES_LABEL, arrivalTime, plural } from '@/lib/ui-format';
+import { mayReverse, paymentRows, seesPayments } from '@/lib/ui-payments';
 import type { Actions } from './actions';
 import { EmailRow } from './EmailRow';
 import { Icon } from './Icon';
 import { MailBox } from './MailBox';
+import { PayItem } from './PayItem';
 import { StatusPill } from './StatusPill';
 
 interface Props {
@@ -20,16 +21,17 @@ interface Props {
   actions: Actions;
 }
 
-/** Una reserva dentro de la hoja: montos, movimientos, cobro, llegada y cancelación. */
+/** Una reserva dentro de la hoja: correo, montos y movimientos (si el rol ve pagos), cobro, reverso (admin),
+ *  confirmación por correo, llegada y cancelación. */
 export function ReservationCard({ r, table, event, role, busy, actions }: Props) {
   const [confirm, setConfirm] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
+  const [revFor, setRevFor] = useState<string | null>(null);
   const [amount, setAmount] = useState(balance(r).toFixed(2));
   const [method, setMethod] = useState(METHODS[0]);
   const [payError, setPayError] = useState('');
   const bal = balance(r);
   const s = resStatus(r);
-  const labels = payLabels(r.payments);
   const sees = seesPayments(role);
   const mailId = `mail-${r.id}`;
 
@@ -59,86 +61,89 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
         </div>
       </header>
 
-      <EmailRow r={r} busy={busy} onSave={actions.setEmail} />
+      <EmailRow r={r} busy={busy} canEdit={sees} onSave={actions.setEmail} />
 
-      <dl className="res-money">
-        <div>
-          <dt>Total</dt>
-          <dd>{formatMoney(r.total_price)}</dd>
-        </div>
-        <div>
-          <dt>Pagado</dt>
-          <dd>{formatMoney(paid(r))}</dd>
-        </div>
-        <div>
-          <dt>Saldo</dt>
-          <dd className={bal > 0 ? 'due' : undefined}>{formatMoney(bal)}</dd>
-        </div>
-      </dl>
+      {sees && (
+        <>
+          <dl className="res-money">
+            <div>
+              <dt>Total</dt>
+              <dd>{formatMoney(r.total_price)}</dd>
+            </div>
+            <div>
+              <dt>Pagado</dt>
+              <dd>{formatMoney(paid(r))}</dd>
+            </div>
+            <div>
+              <dt>Saldo</dt>
+              <dd className={bal > 0 ? 'due' : undefined}>{formatMoney(bal)}</dd>
+            </div>
+          </dl>
 
-      {r.payments.length ? (
-        <ul className="pays" aria-label="Movimientos de pago">
-          {r.payments.map((p, i) => (
-            <li className={`pay${p.kind === 'reversal' ? ' rev' : ''}`} key={p.id}>
-              <span className="pay-l">
-                <b>
-                  {p.kind === 'reversal' && <Icon name="undo" size="sm" />}
-                  {labels[i]}
-                </b>
-                <small>{p.method}</small>
-              </span>
-              <span className="pay-a">{formatMoney(p.amount)}</span>
-              <span />
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="help">Sin abonos todavía.</p>
-      )}
-
-      {bal > 0 && (
-        <form className="subform" noValidate onSubmit={submitPay}>
-          <div className="grid2">
-            <div className="field">
-              <label htmlFor={`pay-amt-${r.id}`}>Monto</label>
-              <div className="money">
-                <span className="unit">$</span>
-                <input
-                  className="inp"
-                  id={`pay-amt-${r.id}`}
-                  type="number"
-                  inputMode="decimal"
-                  min="0.01"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  aria-invalid={payError ? true : undefined}
-                  aria-describedby={payError ? `pay-err-${r.id}` : undefined}
+          {r.payments.length ? (
+            <ul className="pays" aria-label="Movimientos de pago">
+              {paymentRows(r.payments).map((row) => (
+                <PayItem
+                  key={row.p.id}
+                  row={row}
+                  admin={mayReverse(role)}
+                  busy={busy}
+                  open={revFor === row.p.id}
+                  onOpen={() => setRevFor(row.p.id)}
+                  onClose={() => setRevFor(null)}
+                  onReverse={actions.reverse}
                 />
-              </div>
-            </div>
-            <div className="field">
-              <label htmlFor={`pay-met-${r.id}`}>Método</label>
-              <div className="sel-wrap">
-                <select className="inp" id={`pay-met-${r.id}`} value={method} onChange={(e) => setMethod(e.target.value)}>
-                  {METHODS.map((m) => (
-                    <option key={m}>{m}</option>
-                  ))}
-                </select>
-                <Icon name="down" />
-              </div>
-            </div>
-          </div>
-          {payError && (
-            <p className="err-msg" id={`pay-err-${r.id}`} role="alert">
-              <Icon name="alert" size="sm" />
-              <span>{payError}</span>
-            </p>
+              ))}
+            </ul>
+          ) : (
+            <p className="help">Sin abonos todavía.</p>
           )}
-          <button type="submit" className="btn btn-secondary btn-block" disabled={busy}>
-            Registrar pago
-          </button>
-        </form>
+
+          {bal > 0 && (
+            <form className="subform" noValidate onSubmit={submitPay}>
+              <div className="grid2">
+                <div className="field">
+                  <label htmlFor={`pay-amt-${r.id}`}>Monto</label>
+                  <div className="money">
+                    <span className="unit">$</span>
+                    <input
+                      className="inp"
+                      id={`pay-amt-${r.id}`}
+                      type="number"
+                      inputMode="decimal"
+                      min="0.01"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      aria-invalid={payError ? true : undefined}
+                      aria-describedby={payError ? `pay-err-${r.id}` : undefined}
+                    />
+                  </div>
+                </div>
+                <div className="field">
+                  <label htmlFor={`pay-met-${r.id}`}>Método</label>
+                  <div className="sel-wrap">
+                    <select className="inp" id={`pay-met-${r.id}`} value={method} onChange={(e) => setMethod(e.target.value)}>
+                      {METHODS.map((m) => (
+                        <option key={m}>{m}</option>
+                      ))}
+                    </select>
+                    <Icon name="down" />
+                  </div>
+                </div>
+              </div>
+              {payError && (
+                <p className="err-msg" id={`pay-err-${r.id}`} role="alert">
+                  <Icon name="alert" size="sm" />
+                  <span>{payError}</span>
+                </p>
+              )}
+              <button type="submit" className="btn btn-secondary btn-block" disabled={busy}>
+                Registrar pago
+              </button>
+            </form>
+          )}
+        </>
       )}
 
       <div className="res-act">
@@ -159,7 +164,7 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
             Confirmación por correo
           </button>
         )}
-        {confirm ? (
+        {role !== 'admin' ? null : confirm ? (
           <>
             <button
               type="button"
@@ -185,7 +190,7 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
 
       {sees && mailOpen && <MailBox id={mailId} r={r} table={table} event={event} notify={actions.notify} />}
 
-      {r.checked_in === null && bal > 0 && (
+      {sees && r.checked_in === null && bal > 0 && (
         <p className="res-note">
           <Icon name="info" />
           <span>Debe {formatMoney(bal)}. Se puede dejar entrar; queda el aviso.</span>

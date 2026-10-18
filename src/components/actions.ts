@@ -1,4 +1,4 @@
-import type { Reservation, TableRow } from '@/lib/types';
+import type { Payment, Reservation, TableRow } from '@/lib/types';
 
 /** Lo que la interfaz le pide a la base. Main lo implementa con Supabase; la vista previa, con avisos. */
 export interface Actions {
@@ -13,6 +13,8 @@ export interface Actions {
   savePrices: (t: TableRow, price: number | null, seat: number | null) => Promise<boolean>;
   /** null borra el correo. */
   /** Aviso flotante sin pasar por la base (copiar al portapapeles, abrir el correo). */
+  /** Solo admin. El abono no se borra: se suma un movimiento negativo con el motivo. */
+  reverse: (p: Payment, reason: string) => Promise<boolean>;
   notify: (text: string, err?: boolean) => void;
   setEmail: (r: Reservation, email: string | null) => Promise<boolean>;
 }

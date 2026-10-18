@@ -350,3 +350,11 @@ select.inp{appearance:none;-webkit-appearance:none;padding-right:44px;cursor:poi
 .mp-head dt{color:var(--fg-mute)}
 .mp-head dd{margin:0;color:var(--fg);overflow-wrap:anywhere}
 .mp-body{margin:0;padding:14px;font:400 15px/1.55 var(--font-ui);color:var(--fg);white-space:pre-wrap;overflow-wrap:anywhere}
+/* ---------- reverso de un abono ---------- */
+.pay.is-rev .pay-a{text-decoration:line-through;color:var(--fg-mute)}
+.pays .subform{margin:6px 0 10px}
+.subform.danger{border:1px solid var(--err)}
+```
+
+/* ---------- la puerta no ve montos: el resumen queda en tres cifras ---------- */
+@media (min-width:821px){.stats.few{grid-template-columns:repeat(3,minmax(0,1fr))}}

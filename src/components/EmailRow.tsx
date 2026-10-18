@@ -7,7 +7,7 @@ import type { Actions } from './actions';
 import { Icon } from './Icon';
 
 /** Correo del cliente dentro de la tarjeta: se ve, se agrega, se corrige o se borra (vacío). */
-export function EmailRow({ r, busy, onSave }: { r: Reservation; busy: boolean; onSave: Actions['setEmail'] }) {
+export function EmailRow({ r, busy, canEdit, onSave }: { r: Reservation; busy: boolean; canEdit: boolean; onSave: Actions['setEmail'] }) {
   const [edit, setEdit] = useState(false);
   const [value, setValue] = useState(r.email ?? '');
   const [error, setError] = useState('');
@@ -23,17 +23,19 @@ export function EmailRow({ r, busy, onSave }: { r: Reservation; busy: boolean; o
           </b>
           <small>{r.email ?? 'Sin correo'}</small>
         </span>
-        <button
-          type="button"
-          className="mini"
-          onClick={() => {
-            setValue(r.email ?? '');
-            setError('');
-            setEdit(true);
-          }}
-        >
-          {r.email ? 'Editar' : 'Agregar'}
-        </button>
+        {canEdit && (
+          <button
+            type="button"
+            className="mini"
+            onClick={() => {
+              setValue(r.email ?? '');
+              setError('');
+              setEdit(true);
+            }}
+          >
+            {r.email ? 'Editar' : 'Agregar'}
+          </button>
+        )}
       </div>
     );
   }

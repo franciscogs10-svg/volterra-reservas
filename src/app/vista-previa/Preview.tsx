@@ -24,6 +24,7 @@ export function Preview({ pantalla, rol }: { pantalla: 'entrar' | 'panel'; rol: 
     cancel: (r) => aviso(`cancelación de ${r.name}.`),
     savePrices: (t) => aviso(`precios de ${t.code}.`),
     notify: (text, err = false) => setMsg({ text, err }),
+    reverse: (p, reason) => aviso(`reverso de ${p.amount} con motivo "${reason}".`),
     setEmail: (r, email) => aviso(email ? `correo ${email} para ${r.name}.` : `correo de ${r.name} borrado.`),
   };
 

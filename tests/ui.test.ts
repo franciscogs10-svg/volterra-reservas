@@ -4,6 +4,7 @@ import * as ui from '../src/lib/ui-format';
 import * as map from '../src/lib/ui-map';
 import * as mail from '../src/lib/ui-mail';
 import * as pay from '../src/lib/ui-payments';
+import type { Payment } from '../src/lib/types';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
 import { summarize } from '../src/lib/logic';
 
@@ -221,5 +222,36 @@ describe('confirmación por correo', () => {
 describe('quién ve pagos', () => {
   it('ven pagos admin y vendedor; la puerta y el rol vacío no', () => {
     expect([pay.seesPayments('admin'), pay.seesPayments('seller'), pay.seesPayments('door'), pay.seesPayments(null)]).toEqual([true, true, false, false]);
+  });
+});
+
+
+describe('pagos y reversos', () => {
+  const mov = (id: string, amount: number, over: Partial<Payment> = {}): Payment => ({
+    id, amount, kind: amount < 0 ? 'reversal' : 'payment', method: 'Efectivo',
+    created_at: '2026-10-12T15:00:00Z', reverses_payment_id: null, ...over,
+  });
+
+  it('revierte solo el admin', () => {
+    expect([pay.mayReverse('admin'), pay.mayReverse('seller'), pay.mayReverse('door'), pay.mayReverse(null)]).toEqual([true, false, false, false]);
+  });
+  it('un abono revertido queda marcado y ya no se puede revertir', () => {
+    const rows = pay.paymentRows([mov('a', 80), mov('b', 80), mov('c', -80, { reverses_payment_id: 'b' })]);
+    expect(rows.map((r) => [r.label, r.reversed, r.canReverse])).toEqual([
+      ['Abono 1', false, true],
+      ['Abono 2', true, false],
+      ['Reverso', false, false],
+    ]);
+  });
+  it('fecha corta de un movimiento en hora de Maracaibo', () => {
+    expect(pay.payDate('2026-10-15T02:00:00Z')).toBe('14/10');
+  });
+});
+
+describe('resumen sin montos para la puerta', () => {
+  it('sin montos quedan solo puestos libres, mesas sin tocar y personas dentro', () => {
+    const s = summarize(FIXTURE.tables, FIXTURE.reservations, FIXTURE.retained);
+    expect(ui.statItems(s, 14, true).map((i) => i[0])).toEqual(['Vendido', 'Cobrado', 'Por cobrar', 'Puestos libres', 'Mesas sin tocar', 'Personas dentro']);
+    expect(ui.statItems(s, 14, false).map((i) => i[0])).toEqual(['Puestos libres', 'Mesas sin tocar', 'Personas dentro']);
   });
 });

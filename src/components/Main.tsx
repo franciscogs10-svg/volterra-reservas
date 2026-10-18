@@ -106,6 +106,8 @@ export function Main({ email }: { email: string }) {
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),
     cancel: (r) => run(() => sb().rpc('cancel_reservation', { p_res: r.id, p_reason: 'Cancelada desde la app' }), 'Reserva cancelada. Los puestos quedaron libres.'),
     notify: (text, err = false) => setMsg({ text, err }),
+    reverse: (p, reason) =>
+      run(() => sb().rpc('reverse_payment', { p_payment: p.id, p_reason: reason }), 'Reverso registrado. El abono original sigue en el historial.'),
     savePrices: (t: TableRow, price, seat) =>
       run(async () => {
         const { data, error } = await sb().from('tables').update({ price, seat_price: seat }).eq('id', t.id).select('id');

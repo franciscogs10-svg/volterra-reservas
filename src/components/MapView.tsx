@@ -3,6 +3,7 @@
 import type { Snapshot } from '@/lib/data';
 import { eventDateLabel } from '@/lib/logic';
 import type { AreaCode, TableRow } from '@/lib/types';
+import { seesPayments } from '@/lib/ui-payments';
 import { FloorMap } from './FloorMap';
 import { Icon } from './Icon';
 import { Stats } from './Stats';
@@ -43,7 +44,7 @@ export function MapView({ snap, area, onArea, selectedId, onPick, onSaveDate }: 
         </label>
         <input className="inp" id="ev-date" type="date" defaultValue={date ?? ''} key={date ?? 'sin-fecha'} onChange={(e) => onSaveDate(e.target.value)} />
       </div>
-      <Stats tables={snap.tables} reservations={snap.reservations} retained={snap.retained} />
+      <Stats tables={snap.tables} reservations={snap.reservations} retained={snap.retained} showMoney={seesPayments(snap.role)} />
       <div className="area-tabs">
         <div className="seg" role="tablist" aria-label="Planta">
           {AREAS.map(([a, label]) => (

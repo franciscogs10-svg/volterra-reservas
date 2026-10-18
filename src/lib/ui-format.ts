@@ -32,16 +32,19 @@ export interface Summary {
 }
 
 /** Las seis cifras del resumen: etiqueta, valor en dorado y nota debajo. */
-export function statItems(s: Summary, reservations: number): [label: string, value: string, note: string][] {
+export function statItems(s: Summary, reservations: number, showMoney = true): [label: string, value: string, note: string][] {
   const pct = s.sold > 0 ? Math.round((s.collected / s.sold) * 100) : 0;
-  return [
+  const money: [string, string, string][] = [
     ['Vendido', moneyShort(s.sold), plural(reservations, 'reserva', 'reservas')],
     ['Cobrado', moneyShort(s.collected), `${pct}% del total`],
     ['Por cobrar', moneyShort(s.pending), 'en saldos'],
+  ];
+  const rest: [string, string, string][] = [
     ['Puestos libres', String(s.seatsFree), `de ${s.totalSeats}`],
     ['Mesas sin tocar', String(s.untouched), `de ${s.totalTables}`],
     ['Personas dentro', String(s.inside), 'ya llegaron'],
   ];
+  return showMoney ? [...money, ...rest] : rest;
 }
 
 /** Métodos de pago que acepta Alejandro, en el orden en que más los usa. */
