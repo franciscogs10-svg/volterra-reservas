@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { balance, friendlyError, resStatus, seatPrice, summarize, tableStatus, toCsv } from '../src/lib/logic';
-import type { Reservation, TableRow } from '../src/lib/types';
+import type { Payment, Reservation, TableRow } from '../src/lib/types';
 
 const table = (over: Partial<TableRow> = {}): TableRow => ({
   id: 't1', code: 'PB-04', area: 'PB', capacity: 10, price: null, seat_price: null,
@@ -8,9 +8,12 @@ const table = (over: Partial<TableRow> = {}): TableRow => ({
 });
 const res = (over: Partial<Reservation> = {}): Reservation => ({
   id: 'r1', code: 'AB12CD', table_id: 't1', guests: 4, total_price: 100, notes: null,
-  name: 'Marcela', phone: '+58 412', payments: [], checked_in: null, ...over,
+  name: 'Marcela', phone: '+58 412', email: null, payments: [], checked_in: null, checked_in_at: null, ...over,
 });
-const pay = (amount: number) => ({ id: String(Math.random()), amount, kind: 'payment' as const, method: 'Efectivo' });
+const pay = (amount: number, over: Partial<Payment> = {}): Payment => ({
+  id: String(Math.random()), amount, kind: 'payment', method: 'Efectivo',
+  created_at: '2026-10-12T15:00:00+00:00', reverses_payment_id: null, ...over,
+});
 
 describe('estado de reserva', () => {
   it('reservada sin pagos, pagada al completar, ocupada al ingresar', () => {
