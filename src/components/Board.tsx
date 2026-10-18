@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Snapshot } from '@/lib/data';
 import type { AreaCode, TableRow } from '@/lib/types';
 import { placeName } from '@/lib/ui-format';
@@ -9,6 +9,8 @@ import { Icon, type IconName } from './Icon';
 import { MapView } from './MapView';
 import { Panel } from './Panel';
 import { ReservationList } from './ReservationList';
+import { Toast } from './Toast';
+import { useIsMobile } from './useMedia';
 
 export type View = 'mapa' | 'reservas';
 
@@ -36,7 +38,9 @@ export function Board({ snap, email, live, stale, busy, msg, actions, onSaveDate
   const [view, setView] = useState<View>('mapa');
   const [area, setArea] = useState<AreaCode>('PB');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const mobile = useIsMobile();
   const selected = snap.tables.find((t) => t.id === selectedId) ?? null;
+  const close = useCallback(() => setSelectedId(null), []);
 
   function pick(t: TableRow) {
     setArea(t.area);
@@ -85,8 +89,9 @@ export function Board({ snap, email, live, stale, busy, msg, actions, onSaveDate
           )}
           {view === 'reservas' && <ReservationList tables={snap.tables} reservations={snap.reservations} onPick={pick} />}
         </main>
-        <Panel table={selected} reservations={snap.reservations} actions={actions} busy={busy} msg={msg} />
+        <Panel table={selected} reservations={snap.reservations} actions={actions} busy={busy} modal={mobile} onClose={close} />
       </div>
+      <Toast msg={msg} onDone={onDismissMsg} />
     </div>
   );
 }

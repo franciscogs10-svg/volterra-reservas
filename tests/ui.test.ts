@@ -121,3 +121,16 @@ describe('resolución de toques: el centro más cercano gana, nunca el orden de 
     expect(map.resolveTouch(tables, 5, 5)).toBeNull();
   });
 });
+
+describe('hoja de la mesa', () => {
+  it('estado de reserva en palabras de la puerta', () => {
+    expect(ui.RES_LABEL).toEqual({ held: 'Con saldo', paid: 'Pagada', in: 'Llegó' });
+  });
+  it('barra de puestos: primero los que llegaron, luego vendidos, luego libres', () => {
+    expect(ui.seatBar(5, 3, 1)).toEqual(['in', 'on', 'on', '', '']);
+    expect(ui.seatBar(2, 0, 0)).toEqual(['', '']);
+  });
+  it('los abonos se numeran sin contar los reversos', () => {
+    expect(ui.payLabels([{ kind: 'payment' }, { kind: 'reversal' }, { kind: 'payment' }])).toEqual(['Abono 1', 'Reverso', 'Abono 2']);
+  });
+});

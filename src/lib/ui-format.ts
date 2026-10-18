@@ -1,3 +1,5 @@
+import type { ResStatus } from './types';
+
 /* Funciones puras de presentación de MOREFEST. Sin React ni Supabase; imports relativos (vitest no resuelve '@/').
    La fecha larga del evento (eventDateLabel) y los montos con centavos (formatMoney) viven en logic.ts (plan A). */
 
@@ -40,4 +42,21 @@ export function statItems(s: Summary, reservations: number): [label: string, val
     ['Mesas sin tocar', String(s.untouched), `de ${s.totalTables}`],
     ['Personas dentro', String(s.inside), 'ya llegaron'],
   ];
+}
+
+/** Métodos de pago que acepta Alejandro, en el orden en que más los usa. */
+export const METHODS = ['Efectivo', 'Zelle', 'Pago móvil', 'Transferencia'];
+
+/** Estado de una reserva en palabras de la puerta. */
+export const RES_LABEL: Record<ResStatus, string> = { held: 'Con saldo', paid: 'Pagada', in: 'Llegó' };
+
+/** Barra de puestos de la hoja: primero los que llegaron, luego los vendidos, luego los libres. */
+export function seatBar(capacity: number, sold: number, inSeats: number): ('in' | 'on' | '')[] {
+  return Array.from({ length: capacity }, (_, i) => (i < inSeats ? 'in' : i < sold ? 'on' : ''));
+}
+
+/** Nombre de cada movimiento: los abonos se numeran solos, los reversos no cuentan. */
+export function payLabels(payments: { kind: 'payment' | 'reversal' }[]): string[] {
+  let n = 0;
+  return payments.map((p) => (p.kind === 'reversal' ? 'Reverso' : `Abono ${++n}`));
 }
