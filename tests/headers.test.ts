@@ -27,14 +27,16 @@ describe('cabeceras de seguridad', () => {
     expect(h['permissions-policy']).toContain('camera=(self)'); // la puerta podrá leer QR con la cámara
   });
 
-  it('la CSP solo deja hablar con el propio Supabase y las fuentes de Google', async () => {
+  it('la CSP solo deja hablar con el propio Supabase; fuentes y estilos salen del mismo dominio', async () => {
     const csp = (await headersFor('https://abc.supabase.co'))['content-security-policy'];
+    const directive = (name: string) => csp.split(';').map((s) => s.trim()).find((s) => s.startsWith(`${name} `));
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("connect-src 'self' https://abc.supabase.co wss://abc.supabase.co");
-    expect(csp).toContain('https://fonts.googleapis.com');
-    expect(csp).toContain('font-src');
-    expect(csp).toContain('https://fonts.gstatic.com');
+    expect(directive('font-src')).toBe("font-src 'self'");
+    expect(directive('style-src')).toBe("style-src 'self' 'unsafe-inline'");
+    expect(csp).not.toContain('fonts.googleapis.com');
+    expect(csp).not.toContain('fonts.gstatic.com');
   });
 
   it('sin URL de Supabase configurada cae a los dominios de Supabase', async () => {
