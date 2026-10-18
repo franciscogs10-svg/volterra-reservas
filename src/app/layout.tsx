@@ -1,25 +1,36 @@
 import type { Metadata, Viewport } from 'next';
+import { Fraunces, IBM_Plex_Mono, Inter } from 'next/font/google';
 import './globals.css';
 
+/* Fuentes servidas desde el propio dominio con next/font: la CSP no deja salir a Google. */
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  axes: ['opsz', 'SOFT', 'WONK'],
+  variable: '--ff-fraunces',
+  display: 'swap',
+});
+const inter = Inter({ subsets: ['latin'], variable: '--ff-inter', display: 'swap' });
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['500', '600'], variable: '--ff-plex-mono', display: 'swap' });
+
 export const metadata: Metadata = {
-  title: 'VOLTERRA Reservas',
-  description: 'Reservas de mesas y control de acceso de VOLTERRA',
+  title: 'MOREFEST',
+  description: 'Reservas de mesas y control de acceso de MOREFEST, Renacer de Morella Montiel, en VOLTERRA.',
+  applicationName: 'MOREFEST',
   robots: { index: false, follow: false },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#140c08',
+  colorScheme: 'dark',
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap"
-        />
-      </head>
+    <html lang="es" className={`${fraunces.variable} ${inter.variable} ${plexMono.variable}`}>
       <body>{children}</body>
     </html>
   );
