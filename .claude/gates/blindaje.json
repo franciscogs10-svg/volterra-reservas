@@ -1,9 +1,9 @@
 {
-  "sha": "faeb6b82fa858ffdd4cf5e07505eba5853b0bcc2",
-  "fecha": "2026-10-17T22:56:04-04:00",
-  "herramientas": ["security-review", "app-vendible"],
-  "hallazgos": {"critical": 0, "high": 0, "medium": 2, "low": 5},
+  "sha": "2c40279a841fddedc1c1b8ae844d09dd22744361",
+  "fecha": "2026-11-10T17:53:34-04:00",
+  "herramientas": ["security-review"],
+  "hallazgos": {"critical": 0, "high": 0, "medium": 0, "low": 0},
   "critical_high_abiertos": 0,
   "firmado_por": "pc-vscode",
-  "notas": "Security-review sobre feat/morefest-integracion sin hallazgos High/Medium. 138 pruebas, typecheck y build en verde; la vista previa de desarrollo no existe en el build. Migraciones 0009 y 0010 aplicadas por Francisco en el SQL Editor antes del push. Medium abiertos: registro publico de Supabase Auth, sin monitoreo de errores. Credenciales por chat aceptadas por Francisco."
+  "notas": "Cambio acotado: migracion 0011 undo_check_in (solo admin, for update, grants cerrados a anon) y boton Deshacer llegada. 145 pruebas, typecheck y build en verde. Migracion 0011 se aplica antes del push."
 }
