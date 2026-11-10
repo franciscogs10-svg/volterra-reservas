@@ -64,6 +64,7 @@ beforeAll(async () => {
     '0008_blindaje.sql',
     '0009_morefest.sql',
     '0010_guardas_dinero.sql',
+    '0011_deshacer_llegada.sql',
   ]) {
     await db.exec(sql(f));
   }
@@ -452,6 +453,44 @@ describe('guardas de dinero y cancelación (0010)', () => {
       await as(admin);
       await expect(viaApi('anon', null, `select cancel_and_refund('${id}'::uuid, 'x')`)).rejects.toThrow(/permission denied/);
       expect(await statusOf(id)).toBe('confirmed');
+    });
+  });
+
+  describe('undo_check_in (deshacer llegada)', () => {
+    const undo = (id: string) => db.query('select undo_check_in($1)', [id]);
+    const arrivals = async (id: string) => (await db.query('select 1 from check_ins where reservation_id = $1', [id])).rows.length;
+
+    it('quita la llegada, deja rastro en la auditoría y la reserva vuelve a poder entrar o cancelarse', async () => {
+      const r = await reserveAt('PB-11', 1, 80, 0);
+      await db.query('select check_in($1, 1)', [r]);
+      expect(await arrivals(r)).toBe(1);
+      await undo(r);
+      expect(await arrivals(r)).toBe(0);
+      const audit = await db.query("select action from audit_logs where table_name = 'check_ins' and action = 'DELETE'");
+      expect(audit.rows.length).toBeGreaterThan(0);
+      await db.query('select check_in($1, 1)', [r]); // puede volver a marcarse
+      await undo(r);
+      await cancelReason(r, 'se marcó por error');
+      expect(await statusOf(r)).toBe('cancelled');
+    });
+
+    it('rechaza una reserva sin llegada, cancelada o inexistente', async () => {
+      const r = await reserveAt('PB-12', 1, 80, 0);
+      await expect(undo(r)).rejects.toThrow(/sin llegada confirmada/);
+      await cancelReason(r, 'x');
+      await expect(undo(r)).rejects.toThrow(/sin llegada confirmada/);
+      await expect(undo(ghost)).rejects.toThrow(/reserva inexistente/);
+    });
+
+    it('solo el admin; sin sesión no se ejecuta; bloquea la fila de la reserva', async () => {
+      const r = await reserveAt('PB-15', 1, 80, 0);
+      await db.query('select check_in($1, 1)', [r]);
+      await as(seller);
+      await expect(undo(r)).rejects.toThrow(/forbidden/);
+      await as(admin);
+      await expect(viaApi('anon', null, `select undo_check_in('${r}'::uuid)`)).rejects.toThrow(/permission denied/);
+      expect(await arrivals(r)).toBe(1);
+      expect(await src('undo_check_in')).toMatch(/from reservations[\s\S]*for update/i);
     });
   });
 

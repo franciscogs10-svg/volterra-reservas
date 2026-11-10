@@ -27,7 +27,7 @@ export interface CancelPlan {
 export function cancelPlan(r: Reservation, role: AppRole | null): CancelPlan {
   const net = Math.round(paid(r) * 100) / 100;
   if (!mayCancel(role)) return { offered: false, blocked: '', asksMode: false, net };
-  if (r.checked_in !== null) return { offered: false, blocked: 'Ya entró: no se puede cancelar.', asksMode: false, net };
+  if (r.checked_in !== null) return { offered: false, blocked: 'Ya entró. Para cancelar, primero deshaz la llegada.', asksMode: false, net };
   return { offered: true, blocked: '', asksMode: net > 0, net };
 }
 

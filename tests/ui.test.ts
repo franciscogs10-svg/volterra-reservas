@@ -6,6 +6,7 @@ import * as mail from '../src/lib/ui-mail';
 import * as pay from '../src/lib/ui-payments';
 import * as proto from '../src/lib/ui-protocol';
 import * as cancel from '../src/lib/ui-cancel';
+import * as arrival from '../src/lib/ui-arrival';
 import type { Payment, Reservation } from '../src/lib/types';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
 import { summarize } from '../src/lib/logic';
@@ -274,7 +275,7 @@ describe('cancelar con decisión', () => {
   it('con llegada confirmada no se ofrece y dice por qué', () => {
     const p = cancel.cancelPlan(reserva({ payments: [abono(100)], checked_in: 4 }), 'admin');
     expect(p.offered).toBe(false);
-    expect(p.blocked).toBe('Ya entró: no se puede cancelar.');
+    expect(p.blocked).toBe('Ya entró. Para cancelar, primero deshaz la llegada.');
   });
   it('para quien no es admin no hay nada que ofrecer ni explicar', () => {
     const p = cancel.cancelPlan(reserva({ payments: [abono(100)] }), 'seller');
@@ -350,3 +351,21 @@ describe('hoja impresa', () => {
   });
 });
 
+
+describe('deshacer llegada', () => {
+  const llego = (over: Partial<Reservation> = {}): Reservation => ({
+    id: 'r1', code: 'A1B2C3', table_id: 't', guests: 4, total_price: 100, notes: null,
+    name: 'Marcela', phone: null, email: null, payments: [], checked_in: 4, checked_in_at: '2026-11-10T20:00:00Z', ...over,
+  });
+  it('solo el admin puede deshacer una llegada', () => {
+    expect([arrival.mayUndoArrival('admin'), arrival.mayUndoArrival('seller'), arrival.mayUndoArrival('door'), arrival.mayUndoArrival(null)]).toEqual([true, false, false, false]);
+  });
+  it('se ofrece solo si la reserva tiene llegada confirmada', () => {
+    expect(arrival.undoOffered(llego(), 'admin')).toBe(true);
+    expect(arrival.undoOffered(llego({ checked_in: null, checked_in_at: null }), 'admin')).toBe(false);
+    expect(arrival.undoOffered(llego(), 'seller')).toBe(false);
+  });
+  it('el aviso nombra a quien se le deshizo la llegada y dice que puede volver a marcarse', () => {
+    expect(arrival.undoMessage(llego())).toBe('Llegada de Marcela deshecha. Puede volver a marcarse o cancelarse.');
+  });
+});

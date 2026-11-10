@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { loadSnapshot, type Snapshot } from '@/lib/data';
 import { formatMoney, friendlyError, paid } from '@/lib/logic';
+import { undoMessage } from '@/lib/ui-arrival';
 import { cancelMessage, cancelRpc } from '@/lib/ui-cancel';
 import { loadState } from '@/lib/ui-load';
 import type { Reservation, TableRow } from '@/lib/types';
@@ -105,6 +106,7 @@ export function Main({ email }: { email: string }) {
     pay: (r: Reservation, amount, method) =>
       run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de ${formatMoney(amount)} registrado.`),
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),
+    undoCheckIn: (r) => run(() => sb().rpc('undo_check_in', { p_res: r.id }), undoMessage(r)),
     cancel: (r, mode, reason) => {
       // Devolver y retener son dos funciones distintas de la base; sin abono neto solo se cancela.
       const net = Math.round(paid(r) * 100) / 100;

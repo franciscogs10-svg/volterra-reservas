@@ -295,3 +295,9 @@ describe('lista de protocolo', () => {
     expect(protocolTotals([])).toEqual({ reservations: 0, expected: 0, inside: 0 });
   });
 });
+
+describe('friendlyError: deshacer llegada', () => {
+  it('traduce el rechazo de la base cuando no hay llegada que deshacer', () => {
+    expect(friendlyError('sin llegada confirmada')).toBe('Esa reserva no tiene llegada confirmada.');
+  });
+});

@@ -9,6 +9,8 @@ export interface Actions {
   ) => Promise<boolean>;
   pay: (r: Reservation, amount: number, method: string) => Promise<boolean>;
   checkIn: (r: Reservation) => Promise<boolean>;
+  /** Solo admin. Quita una llegada marcada por error (undo_check_in); la reserva vuelve a poder marcarse o cancelarse. */
+  undoCheckIn: (r: Reservation) => Promise<boolean>;
   /** Solo admin, con motivo. 'refund' devuelve el abono (cancel_and_refund); 'retain' lo retiene (cancel_reservation). */
   cancel: (r: Reservation, mode: 'refund' | 'retain', reason: string) => Promise<boolean>;
   savePrices: (t: TableRow, price: number | null, seat: number | null) => Promise<boolean>;

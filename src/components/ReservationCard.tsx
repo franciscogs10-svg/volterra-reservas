@@ -6,6 +6,7 @@ import type { AppRole, EventRow, Reservation, TableRow } from '@/lib/types';
 import { METHODS, RES_LABEL, arrivalTime, plural } from '@/lib/ui-format';
 import { mayReverse, paymentRows, seesPayments } from '@/lib/ui-payments';
 import type { Actions } from './actions';
+import { ArrivalUndo } from './ArrivalUndo';
 import { CancelBox } from './CancelBox';
 import { EmailRow } from './EmailRow';
 import { Icon } from './Icon';
@@ -148,10 +149,13 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
 
       <div className="res-act">
         {r.checked_in !== null ? (
-          <span className="pill st-in">
-            <Icon name="users" />
-            Ingreso confirmado{r.checked_in_at ? ` · ${arrivalTime(r.checked_in_at)}` : ''}
-          </span>
+          <>
+            <span className="pill st-in">
+              <Icon name="users" />
+              Ingreso confirmado{r.checked_in_at ? ` · ${arrivalTime(r.checked_in_at)}` : ''}
+            </span>
+            <ArrivalUndo r={r} role={role} busy={busy} onUndo={actions.undoCheckIn} />
+          </>
         ) : (
           <button type="button" className="btn btn-ok" disabled={busy} onClick={() => actions.checkIn(r)}>
             <Icon name="check" />

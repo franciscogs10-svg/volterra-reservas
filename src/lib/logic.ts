@@ -118,6 +118,7 @@ export function friendlyError(message: string): string {
   if (/anticipo/.test(message)) return 'El anticipo no puede ser mayor al total.';
   if (/forbidden/.test(message)) return 'Tu sesión no tiene permiso para esta acción. Vuelve a entrar.';
   if (/excede los puestos/.test(message)) return 'No pueden entrar más personas que los puestos de la reserva.';
+  if (/sin llegada confirmada/.test(message)) return 'Esa reserva no tiene llegada confirmada.';
   if (/customers_email_format/.test(message)) return 'El correo no tiene un formato válido. Revisa que tenga @ y un dominio.';
   if (/la cancelación exige motivo/.test(message)) return 'Escribe el motivo de la cancelación.';
   if (/el abono supera el saldo/.test(message)) return 'El abono es mayor que el saldo de la reserva. Revisa el monto.';
