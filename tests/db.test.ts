@@ -65,6 +65,7 @@ beforeAll(async () => {
     '0009_morefest.sql',
     '0010_guardas_dinero.sql',
     '0011_deshacer_llegada.sql',
+    '0012_patrocinante.sql',
   ]) {
     await db.exec(sql(f));
   }
@@ -491,6 +492,47 @@ describe('guardas de dinero y cancelación (0010)', () => {
       await expect(viaApi('anon', null, `select undo_check_in('${r}'::uuid)`)).rejects.toThrow(/permission denied/);
       expect(await arrivals(r)).toBe(1);
       expect(await src('undo_check_in')).toMatch(/from reservations[\s\S]*for update/i);
+    });
+  });
+
+  describe('set_sponsor (patrocinante)', () => {
+    const spons = (id: string) => db.query('select set_sponsor($1)', [id]);
+    const row = async (id: string) => one<{ sponsor: boolean; total_price: string }>('select sponsor, total_price from reservations where id = $1', [id]);
+
+    it('marca la reserva como patrocinante y deja el total en 0; ya no recibe abonos', async () => {
+      const r = await reserveAt('VIP-05', 4, 0, 0);
+      await spons(r);
+      const x = await row(r);
+      expect(x.sponsor).toBe(true);
+      expect(Number(x.total_price)).toBe(0);
+      await expect(pay(r, 10)).rejects.toThrow(/el abono supera el saldo/);
+    });
+
+    it('con abonos previos el total queda igual a lo abonado: sin deuda y sin perder el dinero', async () => {
+      const r = await reserveAt('VIP-06', 2, 100, 30);
+      await spons(r);
+      const x = await row(r);
+      expect([x.sponsor, Number(x.total_price)]).toEqual([true, 30]);
+      expect(await net(r)).toBe(30);
+    });
+
+    it('rechaza una reserva cancelada, ya patrocinante o inexistente', async () => {
+      const r = await reserveAt('PB-14', 1, 25, 0);
+      await spons(r);
+      await expect(spons(r)).rejects.toThrow(/ya es patrocinante/);
+      const c = await reserveAt('VIP-07', 2, 0, 0);
+      await cancelReason(c, 'x');
+      await expect(spons(c)).rejects.toThrow(/reserva cancelada/);
+      await expect(spons(ghost)).rejects.toThrow(/reserva inexistente/);
+    });
+
+    it('admin y vendedor sí; puerta no; sin sesión no se ejecuta', async () => {
+      const r = await reserveAt('PB-16', 1, 0, 0);
+      await as(seller);
+      await spons(r);
+      await as(admin);
+      await expect(viaApi('anon', null, `select set_sponsor('${r}'::uuid)`)).rejects.toThrow(/permission denied/);
+      expect(await src('set_sponsor')).toMatch(/from reservations[\s\S]*for update/i);
     });
   });
 

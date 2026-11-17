@@ -9,7 +9,7 @@ import * as cancel from '../src/lib/ui-cancel';
 import * as arrival from '../src/lib/ui-arrival';
 import type { Payment, Reservation } from '../src/lib/types';
 import { FIXTURE } from '../src/app/vista-previa/fixture';
-import { summarize } from '../src/lib/logic';
+import { formatMoney as formatMoneyOf, summarize } from '../src/lib/logic';
 
 describe('textos del encabezado', () => {
   it('nombre corto del lugar', () => {
@@ -266,7 +266,7 @@ describe('cancelar con decisión', () => {
   });
   const reserva = (over: Partial<Reservation> = {}): Reservation => ({
     id: 'r1', code: 'AB12CD', table_id: 't1', guests: 4, total_price: 200, notes: null,
-    name: 'Marcela', phone: null, email: null, payments: [], checked_in: null, checked_in_at: null, ...over,
+    name: 'Marcela', phone: null, email: null, payments: [], checked_in: null, checked_in_at: null, sponsor: false, ...over,
   });
 
   it('solo el admin puede cancelar', () => {
@@ -355,7 +355,7 @@ describe('hoja impresa', () => {
 describe('deshacer llegada', () => {
   const llego = (over: Partial<Reservation> = {}): Reservation => ({
     id: 'r1', code: 'A1B2C3', table_id: 't', guests: 4, total_price: 100, notes: null,
-    name: 'Marcela', phone: null, email: null, payments: [], checked_in: 4, checked_in_at: '2026-11-10T20:00:00Z', ...over,
+    name: 'Marcela', phone: null, email: null, payments: [], checked_in: 4, checked_in_at: '2026-11-10T20:00:00Z', sponsor: false, ...over,
   });
   it('solo el admin puede deshacer una llegada', () => {
     expect([arrival.mayUndoArrival('admin'), arrival.mayUndoArrival('seller'), arrival.mayUndoArrival('door'), arrival.mayUndoArrival(null)]).toEqual([true, false, false, false]);
@@ -367,5 +367,26 @@ describe('deshacer llegada', () => {
   });
   it('el aviso nombra a quien se le deshizo la llegada y dice que puede volver a marcarse', () => {
     expect(arrival.undoMessage(llego())).toBe('Llegada de Marcela deshecha. Puede volver a marcarse o cancelarse.');
+  });
+});
+
+describe('etiqueta de reserva con patrocinante', () => {
+  const r = (over: Partial<Reservation> = {}): Reservation => ({
+    id: 'r', code: 'X', table_id: 't', guests: 4, total_price: 0, notes: null, name: 'Polar',
+    phone: null, email: null, payments: [], checked_in: null, checked_in_at: null, sponsor: true, ...over,
+  });
+  it('patrocinante en vez de pagada; al llegar, llegó', () => {
+    expect(ui.resLabel(r())).toBe('Patrocinante');
+    expect(ui.resLabel(r({ checked_in: 4 }))).toBe('Llegó');
+    expect(ui.resLabel(r({ sponsor: false, total_price: 100 }))).toBe('Con saldo');
+  });
+  it('el saldo del protocolo dice patrocinante', () => {
+    expect(proto.saldoText(0, true)).toBe('Patrocinante');
+    expect(proto.saldoText(50, false)).toBe(formatMoneyOf(50));
+  });
+  it('marcar patrocinante: admin o vendedor, en cualquier reserva que aún no lo sea, aunque muestre deuda', () => {
+    expect(ui.maySponsor(r({ sponsor: false, total_price: 100 }), 'seller')).toBe(true);
+    expect(ui.maySponsor(r({ sponsor: false }), 'door')).toBe(false);
+    expect(ui.maySponsor(r(), 'admin')).toBe(false);
   });
 });

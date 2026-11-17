@@ -46,6 +46,8 @@ export interface Reservation {
   payments: Payment[];
   checked_in: number | null;
   checked_in_at: string | null;
+  /** Patrocinante: ya pagó con su paquete, no debe nada (set_sponsor). */
+  sponsor: boolean;
 }
 
 export type TableStatus = 'free' | 'part' | 'held' | 'paid' | 'in';
@@ -64,4 +66,5 @@ export interface ProtocolRow {
   checkedIn: number | null;
   checkedInAt: string | null;
   notes: string | null;
+  sponsor: boolean;
 }

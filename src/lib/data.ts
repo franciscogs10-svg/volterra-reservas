@@ -31,7 +31,7 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
     sb
       .from('reservations')
       .select(
-        'id,code,table_id,guests,total_price,notes,customers(full_name,phone,email),' +
+        'id,code,table_id,guests,total_price,notes,sponsor,customers(full_name,phone,email),' +
           'payments(id,amount,kind,method,created_at,reverses_payment_id),check_ins(people_in,checked_at)',
       )
       .eq('event_id', event.id)
@@ -87,6 +87,7 @@ export async function loadSnapshot(sb: SupabaseClient): Promise<Snapshot> {
         .sort((a: Payment, b: Payment) => Date.parse(a.created_at) - Date.parse(b.created_at)),
       checked_in: ci?.people_in ?? null,
       checked_in_at: ci?.checked_at ?? null,
+      sponsor: Boolean(r.sponsor),
     };
   });
 

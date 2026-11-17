@@ -23,6 +23,7 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
   const [error, setError] = useState('');
   const [nameMissing, setNameMissing] = useState(false);
   const [emailErr, setEmailErr] = useState('');
+  const [sponsor, setSponsor] = useState(false);
 
   function changeSeats(v: number) {
     const n = Math.min(free, Math.max(1, v));
@@ -35,8 +36,9 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
     const f = new FormData(e.currentTarget);
     const name = String(f.get('name')).trim();
     const email = String(f.get('email') ?? '').trim();
-    const deposit = Number(f.get('deposit')) || 0;
-    const t = Number(total) || 0;
+    // Patrocinante: ya pagó con su paquete, la reserva va sin precio ni anticipo.
+    const deposit = sponsor ? 0 : Number(f.get('deposit')) || 0;
+    const t = sponsor ? 0 : Number(total) || 0;
     setNameMissing(!name);
     if (!name) return setError('Escribe el nombre del cliente.');
     if (!(seats >= 1) || seats > free) return setError(`Solo quedan ${free} puestos libres.`);
@@ -49,7 +51,7 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
       return;
     }
     setError('');
-    await onReserve(table, { name, phone: String(f.get('phone')).trim(), email, guests: seats, total: t, deposit, method: String(f.get('method')) });
+    await onReserve(table, { name, phone: String(f.get('phone')).trim(), email, guests: seats, total: t, deposit, method: String(f.get('method') ?? 'Efectivo'), sponsor });
   }
 
   return (
@@ -116,6 +118,14 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
             </button>
           </div>
         </div>
+        <label className="check-row" htmlFor="nr-sponsor">
+          <input id="nr-sponsor" type="checkbox" checked={sponsor} onChange={(e) => setSponsor(e.target.checked)} />
+          <span>
+            <b>Patrocinante</b>
+            <span className="help">Ya pagó con su paquete de patrocinio: va sin precio ni anticipo.</span>
+          </span>
+        </label>
+        {!sponsor && (
         <div className="grid2">
           <div className="field">
             <label htmlFor="nr-total">Precio total</label>
@@ -156,13 +166,14 @@ export function NewReservation({ table, free, sp, busy, onReserve }: Props) {
             </div>
           </div>
         </div>
+        )}
         {error && (
           <p className="err-msg" id="nr-err" role="alert">
             <Icon name="alert" size="sm" />
             <span>{error}</span>
           </p>
         )}
-        {sp === null && <p className="help">El precio aún no está definido: escribe el total a mano.</p>}
+        {!sponsor && sp === null && <p className="help">El precio aún no está definido: escribe el total a mano.</p>}
         <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
           Reservar {plural(seats, 'puesto', 'puestos')}
         </button>

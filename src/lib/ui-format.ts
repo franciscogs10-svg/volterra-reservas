@@ -1,4 +1,5 @@
-import type { ResStatus } from './types';
+import type { AppRole, Reservation, ResStatus } from './types';
+import { resStatus } from './logic';
 
 /* Funciones puras de presentación de MOREFEST. Sin React ni Supabase; imports relativos (vitest no resuelve '@/').
    La fecha larga del evento (eventDateLabel) y los montos con centavos (formatMoney) viven en logic.ts (plan A). */
@@ -98,3 +99,12 @@ export function printStamp(now: Date): string {
   const day = new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: TZ }).format(now);
   return `${day}, ${arrivalTime(now.toISOString())}`;
 }
+
+/** Etiqueta de la reserva: un patrocinante que aún no llega dice "Patrocinante" en vez de "Pagada". */
+export function resLabel(r: Reservation): string {
+  const s = resStatus(r);
+  return r.sponsor && s !== 'in' ? 'Patrocinante' : RES_LABEL[s];
+}
+
+/** Marcar como patrocinante: admin o vendedor (set_sponsor), en cualquier reserva que aún no lo sea. */
+export const maySponsor = (r: Reservation, role: AppRole | null) => !r.sponsor && (role === 'admin' || role === 'seller');

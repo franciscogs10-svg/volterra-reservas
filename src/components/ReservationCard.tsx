@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { balance, formatMoney, paid, resStatus } from '@/lib/logic';
 import type { AppRole, EventRow, Reservation, TableRow } from '@/lib/types';
-import { METHODS, RES_LABEL, arrivalTime, plural } from '@/lib/ui-format';
+import { METHODS, arrivalTime, maySponsor, plural, resLabel } from '@/lib/ui-format';
 import { mayReverse, paymentRows, seesPayments } from '@/lib/ui-payments';
 import type { Actions } from './actions';
 import { ArrivalUndo } from './ArrivalUndo';
@@ -57,14 +57,21 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
           </p>
         </div>
         <div className="res-right">
-          <StatusPill status={s} label={RES_LABEL[s]} />
+          <StatusPill status={s} label={resLabel(r)} />
           <code className="res-code">{r.code}</code>
         </div>
       </header>
 
       <EmailRow r={r} busy={busy} canEdit={sees} onSave={actions.setEmail} />
 
-      {sees && (
+      {r.sponsor && (
+        <p className="res-note">
+          <Icon name="check" />
+          <span>Patrocinante: incluido en su paquete de patrocinio. No debe nada.</span>
+        </p>
+      )}
+
+      {sees && !r.sponsor && (
         <>
           <dl className="res-money">
             <div>
@@ -168,12 +175,18 @@ export function ReservationCard({ r, table, event, role, busy, actions }: Props)
             Confirmación por correo
           </button>
         )}
+        {maySponsor(r, role) && (
+          <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => actions.setSponsor(r)}>
+            <Icon name="check" />
+            Marcar como patrocinante
+          </button>
+        )}
         <CancelBox r={r} role={role} busy={busy} onCancel={actions.cancel} />
       </div>
 
       {sees && mailOpen && <MailBox id={mailId} r={r} table={table} event={event} notify={actions.notify} />}
 
-      {sees && r.checked_in === null && bal > 0 && (
+      {sees && !r.sponsor && r.checked_in === null && bal > 0 && (
         <p className="res-note">
           <Icon name="info" />
           <span>Debe {formatMoney(bal)}. Se puede dejar entrar; queda el aviso.</span>

@@ -86,6 +86,10 @@ export function Main({ email }: { email: string }) {
       }
       // create_reservation devuelve el uuid de la reserva; el correo va aparte para no cambiarle la firma (spec, sección 7).
       let emailFail = '';
+      if (v.sponsor) {
+        const marked = await sb().rpc('set_sponsor', { p_res: created.data as string });
+        if (marked.error) emailFail = friendlyError(marked.error.message);
+      }
       if (v.email) {
         const saved = await sb().rpc('set_customer_email', { p_res: created.data as string, p_email: v.email });
         if (saved.error) emailFail = friendlyError(saved.error.message);
@@ -95,7 +99,7 @@ export function Main({ email }: { email: string }) {
       // (un segundo envío duplicaría la reserva y su anticipo). El correo se guarda después desde la hoja.
       setMsg(
         emailFail
-          ? { text: `La reserva quedó creada, pero el correo no se guardó: ${emailFail} Agrégalo desde la hoja de la mesa.`, err: true }
+          ? { text: `La reserva quedó creada, pero hubo un problema: ${emailFail} Corrígelo desde la hoja de la mesa.`, err: true }
           : { text: `${v.guests} ${v.guests === 1 ? 'puesto reservado' : 'puestos reservados'} para ${v.name}.`, err: false },
       );
       await reload();
@@ -106,6 +110,7 @@ export function Main({ email }: { email: string }) {
     pay: (r: Reservation, amount, method) =>
       run(() => sb().rpc('add_payment', { p_res: r.id, p_amount: amount, p_method: method, p_ref: null }), `Pago de ${formatMoney(amount)} registrado.`),
     checkIn: (r) => run(() => sb().rpc('check_in', { p_res: r.id, p_people: r.guests }), `Llegada de ${r.name} confirmada.`),
+    setSponsor: (r) => run(() => sb().rpc('set_sponsor', { p_res: r.id }), `${r.name} quedó como patrocinante. Ya no debe nada.`),
     undoCheckIn: (r) => run(() => sb().rpc('undo_check_in', { p_res: r.id }), undoMessage(r)),
     cancel: (r, mode, reason) => {
       // Devolver y retener son dos funciones distintas de la base; sin abono neto solo se cancela.

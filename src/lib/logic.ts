@@ -39,6 +39,7 @@ export const balance = (r: Reservation) => r.total_price - paid(r);
 
 export function resStatus(r: Reservation): ResStatus {
   if (r.checked_in !== null) return 'in';
+  if (r.sponsor) return 'paid'; // ya pagó con su paquete de patrocinio
   if (r.total_price > 0 && paid(r) >= r.total_price) return 'paid';
   return 'held';
 }
@@ -106,7 +107,7 @@ export function toCsv(tables: TableRow[], all: Reservation[]) {
         r.total_price.toFixed(2),
         paid(r).toFixed(2),
         balance(r).toFixed(2),
-        LABEL[resStatus(r)],
+        r.sponsor && r.checked_in === null ? 'Patrocinante' : LABEL[resStatus(r)],
       ]),
     );
   return rows.map((r) => r.map(csvCell).join(',')).join('\n');
@@ -118,6 +119,7 @@ export function friendlyError(message: string): string {
   if (/anticipo/.test(message)) return 'El anticipo no puede ser mayor al total.';
   if (/forbidden/.test(message)) return 'Tu sesión no tiene permiso para esta acción. Vuelve a entrar.';
   if (/excede los puestos/.test(message)) return 'No pueden entrar más personas que los puestos de la reserva.';
+  if (/ya es patrocinante/.test(message)) return 'Esa reserva ya es de patrocinante.';
   if (/sin llegada confirmada/.test(message)) return 'Esa reserva no tiene llegada confirmada.';
   if (/customers_email_format/.test(message)) return 'El correo no tiene un formato válido. Revisa que tenga @ y un dominio.';
   if (/la cancelación exige motivo/.test(message)) return 'Escribe el motivo de la cancelación.';
@@ -175,11 +177,15 @@ export function confirmationMessage(r: Reservation, table: TableRow, ev: EventRo
     ...(ev.venue ? [ev.venue] : []),
     `Código de reserva: ${r.code}`,
     '',
-    `Total: ${formatMoney(r.total_price)}`,
-    'Abonos:',
-    ...(lines.length ? lines : ['- Sin abonos todavía']),
-    `Pagado: ${formatMoney(paid(r))}`,
-    r.total_price > 0 && bal <= 0 ? 'Pagado completo' : `Saldo pendiente: ${formatMoney(Math.max(0, bal))}`,
+    ...(r.sponsor
+      ? ['Incluido en tu paquete de patrocinio.']
+      : [
+          `Total: ${formatMoney(r.total_price)}`,
+          'Abonos:',
+          ...(lines.length ? lines : ['- Sin abonos todavía']),
+          `Pagado: ${formatMoney(paid(r))}`,
+          r.total_price > 0 && bal <= 0 ? 'Pagado completo' : `Saldo pendiente: ${formatMoney(Math.max(0, bal))}`,
+        ]),
     '',
     'En la puerta te ubicamos por tu nombre o por el código de la reserva.',
     '',
@@ -215,7 +221,7 @@ export function protocolRows(
     return [{
       reservationId: r.id, tableId: t.id, tableCode: t.code, area: t.area, name: r.name, guests: r.guests,
       code: r.code, balance: canSeePayments ? balance(r) : null, checkedIn: r.checked_in,
-      checkedInAt: r.checked_in_at, notes: r.notes,
+      checkedInAt: r.checked_in_at, notes: r.notes, sponsor: r.sponsor,
     }];
   });
   return rows.sort(

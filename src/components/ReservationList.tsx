@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { balance, formatMoney, paid, resStatus, toCsv } from '@/lib/logic';
 import type { Reservation, TableRow } from '@/lib/types';
-import { RES_LABEL, csvFileName, matchesQuery, plural } from '@/lib/ui-format';
+import { csvFileName, matchesQuery, plural, resLabel } from '@/lib/ui-format';
 import { Icon } from './Icon';
 import { StatusPill } from './StatusPill';
 
@@ -90,7 +90,7 @@ export function ReservationList({ tables, reservations, onPick }: Props) {
                       <span>{r.phone || 'sin WhatsApp'}</span>
                     </span>
                     <span className="rr-side">
-                      <StatusPill status={s} label={RES_LABEL[s]} />
+                      <StatusPill status={s} label={resLabel(r)} />
                       <span className={`rr-bal${bal > 0 ? ' due' : ''}`}>{bal > 0 ? `Saldo ${formatMoney(bal)}` : `Pagado ${formatMoney(paid(r))}`}</span>
                     </span>
                   </button>
@@ -150,7 +150,7 @@ export function ReservationList({ tables, reservations, onPick }: Props) {
                       <td className="n">{formatMoney(paid(r))}</td>
                       <td className={`n${bal > 0 ? ' due' : ''}`}>{formatMoney(bal)}</td>
                       <td>
-                        <StatusPill status={s} label={RES_LABEL[s]} />
+                        <StatusPill status={s} label={resLabel(r)} />
                       </td>
                     </tr>
                   );

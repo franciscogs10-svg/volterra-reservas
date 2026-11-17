@@ -9,7 +9,8 @@ export function groupByArea<T extends { area: AreaCode }>(rows: T[]) {
     .filter((group) => group.rows.length > 0);
 }
 
-export function saldoText(balance: number | null): string {
+export function saldoText(balance: number | null, sponsor = false): string {
+  if (sponsor) return 'Patrocinante';
   if (balance === null) return '—';
   return balance > 0 ? formatMoney(balance) : 'Pagado';
 }

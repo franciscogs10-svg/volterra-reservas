@@ -5,10 +5,12 @@ export interface Actions {
   /** `email` llega recortado y validado; vacío si no hay. Devuelve true si la reserva quedó creada, aunque el correo no se haya guardado. */
   reserve: (
     t: TableRow,
-    v: { name: string; phone: string; email: string; guests: number; total: number; deposit: number; method: string },
+    v: { name: string; phone: string; email: string; guests: number; total: number; deposit: number; method: string; sponsor: boolean },
   ) => Promise<boolean>;
   pay: (r: Reservation, amount: number, method: string) => Promise<boolean>;
   checkIn: (r: Reservation) => Promise<boolean>;
+  /** Admin o vendedor. Marca la reserva de patrocinante (set_sponsor): deja de deber. */
+  setSponsor: (r: Reservation) => Promise<boolean>;
   /** Solo admin. Quita una llegada marcada por error (undo_check_in); la reserva vuelve a poder marcarse o cancelarse. */
   undoCheckIn: (r: Reservation) => Promise<boolean>;
   /** Solo admin, con motivo. 'refund' devuelve el abono (cancel_and_refund); 'retain' lo retiene (cancel_reservation). */

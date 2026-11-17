@@ -70,7 +70,7 @@ export function ProtocolView({ tables, reservations, event, role, onPick, onPrin
               <li key={row.reservationId}>
                 <button type="button" className={`prow${row.checkedIn !== null ? ' is-in' : ''}`} onClick={() => open(row)}>
                   <span className="pr-mesa">{row.tableCode}</span>
-                  <span className="pr-main"><b>{row.name}</b><span>{plural(row.guests, 'persona', 'personas')} · <code>{row.code}</code> · <Saldo balance={row.balance} /></span></span>
+                  <span className="pr-main"><b>{row.name}</b><span>{plural(row.guests, 'persona', 'personas')} · <code>{row.code}</code> · <Saldo balance={row.balance} sponsor={row.sponsor} /></span></span>
                   <Arrival row={row} />
                 </button>
               </li>
@@ -83,7 +83,8 @@ export function ProtocolView({ tables, reservations, event, role, onPick, onPrin
   );
 }
 
-function Saldo({ balance }: { balance: number | null }) {
+function Saldo({ balance, sponsor }: { balance: number | null; sponsor: boolean }) {
+  if (sponsor) return <span>Patrocinante</span>;
   if (balance === null) return <span>Saldo —</span>;
   if (balance > 0) return <span className="pr-due"><Icon name="clock" size="sm" />Debe {saldoText(balance)}</span>;
   return <span className="pr-ok"><Icon name="check" size="sm" />Pagado</span>;

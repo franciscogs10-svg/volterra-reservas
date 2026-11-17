@@ -37,7 +37,7 @@ export function PrintSheet({ event, tables, reservations, role, printedAt }: Pro
               <tr className="ps-area"><th colSpan={6} scope="colgroup">{group.label}</th></tr>
               {group.rows.map((row) => (
                 <tr key={row.reservationId}>
-                  <td className="mono">{row.tableCode}</td><td>{row.name}</td><td className="code">{row.code}</td><td className="n">{row.guests}</td><td className="n">{saldoText(row.balance)}</td>
+                  <td className="mono">{row.tableCode}</td><td>{row.name}</td><td className="code">{row.code}</td><td className="n">{row.guests}</td><td className="n">{saldoText(row.balance, row.sponsor)}</td>
                   <td className="when">{row.checkedInAt ? arrivalTime(row.checkedInAt) : row.checkedIn !== null ? 'Sí' : <span className="ps-box" />}</td>
                 </tr>
               ))}

@@ -11,7 +11,7 @@ const table = (over: Partial<TableRow> = {}): TableRow => ({
 });
 const res = (over: Partial<Reservation> = {}): Reservation => ({
   id: 'r1', code: 'AB12CD', table_id: 't1', guests: 4, total_price: 100, notes: null,
-  name: 'Marcela', phone: '+58 412', email: null, payments: [], checked_in: null, checked_in_at: null, ...over,
+  name: 'Marcela', phone: '+58 412', email: null, payments: [], checked_in: null, checked_in_at: null, sponsor: false, ...over,
 });
 const pay = (amount: number, over: Partial<Payment> = {}): Payment => ({
   id: String(Math.random()), amount, kind: 'payment', method: 'Efectivo',
@@ -280,7 +280,7 @@ describe('lista de protocolo', () => {
     const rows = protocolRows(tables, all, 'mesa', true);
     expect(rows.find((r) => r.code === 'AAA111')).toEqual({
       reservationId: 'a', tableId: 'p10', tableCode: 'PB-10', area: 'PB', name: 'Óscar Atencio', guests: 10,
-      code: 'AAA111', balance: 0, checkedIn: 10, checkedInAt: '2026-11-15T00:14:00+00:00', notes: null,
+      code: 'AAA111', balance: 0, checkedIn: 10, checkedInAt: '2026-11-15T00:14:00+00:00', notes: null, sponsor: false,
     });
     expect(rows.find((r) => r.code === 'BBB222')).toMatchObject({ balance: 300, notes: 'Patrocinador', checkedIn: null });
     expect(protocolRows(tables, all, 'mesa', false).map((r) => r.balance)).toEqual([null, null, null, null, null]);
@@ -299,5 +299,32 @@ describe('lista de protocolo', () => {
 describe('friendlyError: deshacer llegada', () => {
   it('traduce el rechazo de la base cuando no hay llegada que deshacer', () => {
     expect(friendlyError('sin llegada confirmada')).toBe('Esa reserva no tiene llegada confirmada.');
+  });
+});
+
+describe('patrocinante', () => {
+  const pat = res({ total_price: 0, sponsor: true });
+  it('cuenta como pagada (no debe nada) y al llegar como ocupada', () => {
+    expect(resStatus(pat)).toBe('paid');
+    expect(resStatus({ ...pat, checked_in: 4 })).toBe('in');
+    expect(balance(pat)).toBe(0);
+  });
+  it('la mesa de un patrocinante se ve pagada, no reservada con saldo', () => {
+    expect(tableStatus(table({ capacity: 4 }), [pat])).toBe('paid');
+  });
+  it('el CSV lo marca como patrocinante', () => {
+    expect(toCsv([table()], [pat]).split('\n')[1]).toMatch(/"Patrocinante"$/);
+  });
+  it('el correo dice que va incluido en el paquete y no habla de saldo', () => {
+    const { body } = confirmationMessage(pat, table(), { id: 'e', name: 'MOREFEST', venue: null, event_date: null });
+    expect(body).toMatch(/Incluido en tu paquete de patrocinio/);
+    expect(body).not.toMatch(/Saldo|Abonos|Pagado/);
+  });
+  it('en la lista de protocolo va marcado como patrocinante', () => {
+    const [row] = protocolRows([table()], [pat], 'mesa', true);
+    expect(row.sponsor).toBe(true);
+  });
+  it('traduce los rechazos de la base al marcar patrocinante', () => {
+    expect(friendlyError('ya es patrocinante')).toBe('Esa reserva ya es de patrocinante.');
   });
 });

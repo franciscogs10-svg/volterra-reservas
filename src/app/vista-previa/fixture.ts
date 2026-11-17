@@ -74,6 +74,7 @@ const R = (
   payments,
   checked_in: cin?.n ?? null,
   checked_in_at: cin?.at ?? null,
+  sponsor: false,
 });
 
 /** Un abono cargado dos veces y corregido con su reverso: el original no se borra. */
