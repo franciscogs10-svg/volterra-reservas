@@ -9,7 +9,7 @@ export interface Actions {
   ) => Promise<boolean>;
   pay: (r: Reservation, amount: number, method: string) => Promise<boolean>;
   checkIn: (r: Reservation) => Promise<boolean>;
-  /** Admin o vendedor. Marca la reserva de patrocinante (set_sponsor): deja de deber. */
+  /** Solo admin en reservas existentes. Marca la reserva de patrocinante (set_sponsor): deja de deber. */
   setSponsor: (r: Reservation) => Promise<boolean>;
   /** Solo admin. Quita una llegada marcada por error (undo_check_in); la reserva vuelve a poder marcarse o cancelarse. */
   undoCheckIn: (r: Reservation) => Promise<boolean>;

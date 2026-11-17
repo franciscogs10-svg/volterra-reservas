@@ -526,12 +526,23 @@ describe('guardas de dinero y cancelación (0010)', () => {
       await expect(spons(ghost)).rejects.toThrow(/reserva inexistente/);
     });
 
-    it('admin y vendedor sí; puerta no; sin sesión no se ejecuta', async () => {
-      const r = await reserveAt('PB-16', 1, 0, 0);
+    it('el vendedor solo marca su propia reserva sin abonos; una ajena o con abonos es del admin; queda quién y cuándo', async () => {
+      const ajena = await reserveAt('PB-16', 1, 25, 0); // creada por el admin
       await as(seller);
-      await spons(r);
+      await expect(spons(ajena)).rejects.toThrow(/forbidden/);
+      const t = (await one<{ id: string }>("select id from tables where code = 'PB-16'")).id;
+      const mia = (await one<{ id: string }>(
+        "select create_reservation($1, 'Patrocinador X', null, 1, 0, 0, 'Efectivo', null) as id", [t])).id;
+      await spons(mia);
+      const conAbono = (await one<{ id: string }>(
+        "select create_reservation($1, 'Cliente Y', null, 1, 25, 10, 'Efectivo', null) as id", [t])).id;
+      await expect(spons(conAbono)).rejects.toThrow(/forbidden/);
       await as(admin);
-      await expect(viaApi('anon', null, `select set_sponsor('${r}'::uuid)`)).rejects.toThrow(/permission denied/);
+      await spons(ajena);
+      const quien = await one<{ sponsor_by: string; sponsor_at: string | null }>('select sponsor_by, sponsor_at from reservations where id = $1', [mia]);
+      expect(quien.sponsor_by).toBe(seller);
+      expect(quien.sponsor_at).not.toBeNull();
+      await expect(viaApi('anon', null, `select set_sponsor('${conAbono}'::uuid)`)).rejects.toThrow(/permission denied/);
       expect(await src('set_sponsor')).toMatch(/from reservations[\s\S]*for update/i);
     });
   });

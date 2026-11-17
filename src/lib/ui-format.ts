@@ -106,5 +106,6 @@ export function resLabel(r: Reservation): string {
   return r.sponsor && s !== 'in' ? 'Patrocinante' : RES_LABEL[s];
 }
 
-/** Marcar como patrocinante: admin o vendedor (set_sponsor), en cualquier reserva que aún no lo sea. */
-export const maySponsor = (r: Reservation, role: AppRole | null) => !r.sponsor && (role === 'admin' || role === 'seller');
+/** Marcar como patrocinante una reserva ya existente: solo el admin (set_sponsor). El vendedor solo lo hace al crear
+ *  su propia reserva de patrocinante, desde el formulario. */
+export const maySponsor = (r: Reservation, role: AppRole | null) => !r.sponsor && role === 'admin';

@@ -384,8 +384,9 @@ describe('etiqueta de reserva con patrocinante', () => {
     expect(proto.saldoText(0, true)).toBe('Patrocinante');
     expect(proto.saldoText(50, false)).toBe(formatMoneyOf(50));
   });
-  it('marcar patrocinante: admin o vendedor, en cualquier reserva que aún no lo sea, aunque muestre deuda', () => {
-    expect(ui.maySponsor(r({ sponsor: false, total_price: 100 }), 'seller')).toBe(true);
+  it('marcar patrocinante en una reserva existente: solo el admin, aunque muestre deuda', () => {
+    expect(ui.maySponsor(r({ sponsor: false, total_price: 100 }), 'admin')).toBe(true);
+    expect(ui.maySponsor(r({ sponsor: false, total_price: 100 }), 'seller')).toBe(false);
     expect(ui.maySponsor(r({ sponsor: false }), 'door')).toBe(false);
     expect(ui.maySponsor(r(), 'admin')).toBe(false);
   });
