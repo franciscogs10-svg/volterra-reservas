@@ -31,6 +31,7 @@ NUEVO = (96, 40, 48)  # ancho, alto, giro de 0007
 
 # Sofá nuevo en coordenadas locales del recuadro: x a lo largo, y hacia el espaldar (lado de los artistas).
 ESPALDAR, BRAZO, RADIO = 10, 6, 3.5
+COJINES = 6  # sofás de 6 personas (Alejandro, 2026-11-20; migración 0013)
 
 # Borde del lado del piso de la baranda diagonal, ajustado sobre filas limpias del plano: x = A*y + B.
 BAR_A, BAR_B = 0.886375, -28.456
@@ -121,9 +122,9 @@ def dibujar_sofas():
         d.line([p(-xb, yb), p(xb, yb)], fill=0, width=4)  # frente del espaldar
         for s in (-1, 1):
             d.line([p(s * xb, yb), p(s * xb, -h / 2)], fill=0, width=4)  # brazos hasta el frente
-        for i in (1, 2, 3):
-            x = -xb + i * (2 * xb) / 4
-            d.line([p(x, yb), p(x, -h / 2)], fill=0, width=3)  # cuatro cojines de asiento
+        for i in range(1, COJINES):
+            x = -xb + i * (2 * xb) / COJINES
+            d.line([p(x, yb), p(x, -h / 2)], fill=0, width=3)  # un cojín de asiento por persona
     return capa.resize(LIENZO, Image.LANCZOS)
 
 
