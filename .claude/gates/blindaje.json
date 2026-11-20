@@ -1,9 +1,9 @@
 {
-  "sha": "812ff657f205a6ff2aa357397832ed48d4fab2ac",
-  "fecha": "2026-11-20T11:33:29-05:00",
+  "sha": "a0fd607f6b633db891e497d9cbe7ee74c3e896f2",
+  "fecha": "2026-11-20T12:18:08-05:00",
   "herramientas": ["security-review"],
   "hallazgos": {"critical": 0, "high": 0, "medium": 0, "low": 1},
   "critical_high_abiertos": 0,
   "firmado_por": "pc-vscode",
-  "notas": "Migracion 0013 solo datos (capacidad 6 en VIP y reservas de sofa entero 4 a 6). security-review sin hallazgos High/Medium; trigger de capacidad sigue vigente; sin cambios de dinero. 159 pruebas y build en verde. Vuelta atras: promover morefest-dqhznrb9u. Low abierto: Next.js 16.4.2 con vulnerabilidad conocida."
+  "notas": "Plano VIP con 6 cojines: imagen JPEG limpia (sin EXIF ni datos agregados) y script local sin entradas nuevas. security-review sin hallazgos High/Medium. Build en verde. Vuelta atras: promover morefest-kvwxrsw0m. Low abierto: Next.js 16.4.2."
 }
