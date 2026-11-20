@@ -66,6 +66,7 @@ beforeAll(async () => {
     '0010_guardas_dinero.sql',
     '0011_deshacer_llegada.sql',
     '0012_patrocinante.sql',
+    '0013_vip_6_personas.sql',
   ]) {
     await db.exec(sql(f));
   }
@@ -85,9 +86,9 @@ describe('datos iniciales', () => {
     const s = (await db.query("select code, kind, capacity from tables where active and kind <> 'table' order by code")).rows;
     expect(s).toEqual([
       { code: 'PB-16', kind: 'seat', capacity: 11 },
-      { code: 'VIP-05', kind: 'sofa', capacity: 4 },
-      { code: 'VIP-06', kind: 'sofa', capacity: 4 },
-      { code: 'VIP-07', kind: 'sofa', capacity: 4 },
+      { code: 'VIP-05', kind: 'sofa', capacity: 6 },
+      { code: 'VIP-06', kind: 'sofa', capacity: 6 },
+      { code: 'VIP-07', kind: 'sofa', capacity: 6 },
     ]);
   });
 
@@ -544,6 +545,18 @@ describe('guardas de dinero y cancelación (0010)', () => {
       expect(quien.sponsor_at).not.toBeNull();
       await expect(viaApi('anon', null, `select set_sponsor('${conAbono}'::uuid)`)).rejects.toThrow(/permission denied/);
       expect(await src('set_sponsor')).toMatch(/from reservations[\s\S]*for update/i);
+    });
+  });
+
+  describe('planta alta de 6 personas (0013)', () => {
+    it('un sofá ocupado entero con 4 pasa a 6; uno compartido no se toca', async () => {
+      const entero = await reserveAt('VIP-07', 4, 0, 0);
+      await db.query("update tables set capacity = 4 where code = 'VIP-07'");
+      await db.exec(sql('0013_vip_6_personas.sql'));
+      const g = await one<{ guests: number }>('select guests from reservations where id = $1', [entero]);
+      expect(g.guests).toBe(6);
+      expect((await one<{ capacity: number }>("select capacity from tables where code = 'VIP-07'")).capacity).toBe(6);
+      await cancelReason(entero, 'limpieza');
     });
   });
 
